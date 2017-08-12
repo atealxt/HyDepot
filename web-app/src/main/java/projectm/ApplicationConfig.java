@@ -1,0 +1,49 @@
+package projectm;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCache;
+import org.springframework.cache.support.SimpleCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@Configuration
+@EnableSwagger2
+@EnableAutoConfiguration
+public class ApplicationConfig {
+
+	@Bean
+	public CacheManager getCacheManager() {
+		SimpleCacheManager cacheManager = new SimpleCacheManager();
+		List<Cache> caches = new ArrayList<>();
+		caches.add(new ConcurrentMapCache(Application.CACHE_GENERAL));
+		cacheManager.setCaches(caches);
+		return cacheManager;
+	}
+
+	@Bean
+	public Docket apis() {
+		ApiInfo apiInfo = new ApiInfoBuilder()//
+				.title("Project M APIs")//
+				.description("Project M APIs")//
+				.version("1.0")//
+				.build();
+		return new Docket(DocumentationType.SWAGGER_2)//
+				.groupName("project-m-apis")//
+				.apiInfo(apiInfo)//
+				.select()//
+				.paths(PathSelectors.ant("/**"))//
+				.build();
+	}
+}
