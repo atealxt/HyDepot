@@ -27,4 +27,16 @@ public class PrivateStorageService implements StorageService {
 
 	}
 
+	@Override
+	public void colder(String bucketName, String documentId) throws StorageException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void hotter(String bucketName, String documentId) throws StorageException {
+		// TODO Auto-generated method stub
+
+	}
+
 }

@@ -59,4 +59,16 @@ public class S3StorageService implements StorageService {
 	public void delete(String bucketName, String documentId) {
 		s3client.deleteObject(bucketName, documentId);
 	}
+
+	@Override
+	public void colder(String bucketName, String documentId) throws StorageException {
+		// TODO Auto-generated method stub
+//		s3client.changeObjectStorageClass(bucketName, key, newStorageClass);
+	}
+
+	@Override
+	public void hotter(String bucketName, String documentId) throws StorageException {
+		// TODO Auto-generated method stub
+
+	}
 }

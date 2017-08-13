@@ -7,4 +7,8 @@ public interface StorageService {
 	byte[] fetch(String bucketName, String documentId) throws StorageException;
 
 	void delete(String bucketName, String documentId) throws StorageException;
+
+	void colder(String bucketName, String documentId) throws StorageException;
+
+	void hotter(String bucketName, String documentId) throws StorageException;
 }
