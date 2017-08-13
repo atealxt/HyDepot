@@ -63,12 +63,18 @@ public class S3StorageService implements StorageService {
 	@Override
 	public void colder(String bucketName, String documentId) throws StorageException {
 		// TODO Auto-generated method stub
-//		s3client.changeObjectStorageClass(bucketName, key, newStorageClass);
+
+		//way1
+		// s3client.changeObjectStorageClass(bucketName, key, newStorageClass);
+
+		//way2
+//		CopyObjectRequest copyObjectRequest = new CopyObjectRequest(bucketName, documentId, bucketName + "coder",
+//				documentId).withStorageClass(StorageClass.StandardInfrequentAccess);
+//		s3client.copyObject(copyObjectRequest);
 	}
 
 	@Override
 	public void hotter(String bucketName, String documentId) throws StorageException {
 		// TODO Auto-generated method stub
-
 	}
 }
