@@ -1,4 +1,4 @@
-package projectm.storage;
+package projectm.service.storage;
 
 public class StorageException extends RuntimeException {
 

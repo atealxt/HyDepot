@@ -1,8 +1,11 @@
 package projectm;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -10,7 +13,11 @@ import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import projectm.service.storage.StorageException;
+import projectm.service.storage.StorageService;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.service.ApiInfo;
@@ -22,6 +29,23 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 @EnableAutoConfiguration
 public class ApplicationConfig {
+
+	@Autowired
+	@Qualifier("S3StorageService")
+	private StorageService s3;
+	@Autowired
+	@Qualifier("PrivateStorageService")
+	private StorageService priv;
+
+	@Bean
+	public List<StorageService> storages() {
+		return Arrays.asList(s3, priv);
+	}
+
+	@Bean
+	public StorageService primaryStorage() {
+		return s3;
+	}
 
 	@Bean
 	public CacheManager getCacheManager() {
@@ -46,4 +70,10 @@ public class ApplicationConfig {
 				.paths(PathSelectors.ant("/api/**"))//
 				.build();
 	}
+
+	@ExceptionHandler(StorageException.class)
+	public ResponseEntity<?> handleStorageFileNotFound(StorageException exc) {
+		return ResponseEntity.notFound().build();
+	}
+
 }
