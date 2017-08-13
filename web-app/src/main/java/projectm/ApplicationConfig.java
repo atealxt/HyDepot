@@ -43,7 +43,7 @@ public class ApplicationConfig {
 				.groupName("project-m-apis")//
 				.apiInfo(apiInfo)//
 				.select()//
-				.paths(PathSelectors.ant("/**"))//
+				.paths(PathSelectors.ant("/api/**"))//
 				.build();
 	}
 }

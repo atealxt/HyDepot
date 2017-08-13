@@ -34,9 +34,10 @@ public class HomeController {
 			e.printStackTrace();
 		}
 		
-		return "Project M is Online!";
+		return "<h1>Project M</h1><a href='swagger-ui.html'>swagger-ui.html</a>";
 	}
 
+	@SuppressWarnings("unused")
 	private void testEtcd() throws InterruptedException, ExecutionException {
 
 		// create client
