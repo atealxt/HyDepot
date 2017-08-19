@@ -17,7 +17,7 @@ import projectm.service.storage.StorageException;
 
 @RestController
 @RequestMapping("api")
-public class FileUploadController {
+public class UploadController {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired

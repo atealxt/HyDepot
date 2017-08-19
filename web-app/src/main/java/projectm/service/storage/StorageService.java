@@ -11,4 +11,6 @@ public interface StorageService {
 	void colder(String bucketName, String documentId) throws StorageException;
 
 	void hotter(String bucketName, String documentId) throws StorageException;
+
+	// TODO signed url
 }

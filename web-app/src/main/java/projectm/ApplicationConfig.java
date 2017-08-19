@@ -13,6 +13,7 @@ import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -32,19 +33,29 @@ public class ApplicationConfig {
 
 	@Autowired
 	@Qualifier("S3StorageService")
+	@Lazy
 	private StorageService s3;
 	@Autowired
+	@Qualifier("OSSStorageService")
+	@Lazy
+	private StorageService oss;
+	@Autowired
+	@Qualifier("GCSStorageService")
+	@Lazy
+	private StorageService gcs;
+	@Autowired
 	@Qualifier("PrivateStorageService")
+	@Lazy
 	private StorageService priv;
 
 	@Bean
 	public List<StorageService> storages() {
-		return Arrays.asList(s3, priv);
+		return Arrays.asList(s3, oss, gcs, priv);
 	}
 
 	@Bean
 	public StorageService primaryStorage() {
-		return s3;
+		return priv; // for debug
 	}
 
 	@Bean

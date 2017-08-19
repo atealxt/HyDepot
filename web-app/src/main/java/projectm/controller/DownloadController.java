@@ -10,7 +10,7 @@ import projectm.ApplicationConfig;
 
 @RestController
 @RequestMapping("api")
-public class FileDownloadController {
+public class DownloadController {
 
 	@Autowired
 	private ApplicationConfig appConfig;
