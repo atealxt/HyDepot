@@ -28,6 +28,7 @@ public class S3StorageService implements StorageService {
 
 	@PostConstruct
 	public void init() {
+		// TODO config
 		s3client = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1)
 				.withCredentials(new DefaultAWSCredentialsProviderChain()).build();
 	}

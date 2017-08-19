@@ -31,18 +31,19 @@ import projectm.service.storage.StorageService;
 public class GCSStorageService implements StorageService {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
-	private String serviceAccountEmail = "mocked";
-	private PrivateKey privateKey = PemPrivateKey.valueOf("mocked".getBytes()) ;
-	private String gcsProjectId;
 	private Storage storage;
-	private static final String USER_INFO_EMAIL_SCOPE = "https://www.googleapis.com/auth/userinfo.email";
-	private static final String CLOUD_STORAGE_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
-	private static final List<String> serviceAccountScopes = Arrays.asList(USER_INFO_EMAIL_SCOPE, CLOUD_STORAGE_SCOPE);
 
 	@PostConstruct
 	public void init() {
 		HttpTransport transport = new NetHttpTransport();
 		JsonFactory jsonFactory = new JacksonFactory();
+		// TODO config
+		String serviceAccountEmail = "mocked";
+		PrivateKey privateKey = PemPrivateKey.valueOf("mocked".getBytes());
+		String gcsProjectId = null;
+		String USER_INFO_EMAIL_SCOPE = "https://www.googleapis.com/auth/userinfo.email";
+		String CLOUD_STORAGE_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
+		List<String> serviceAccountScopes = Arrays.asList(USER_INFO_EMAIL_SCOPE, CLOUD_STORAGE_SCOPE);
 		GoogleCredential credential = new GoogleCredential.Builder().setTransport(transport).setJsonFactory(jsonFactory)
 				.setServiceAccountId(serviceAccountEmail).setServiceAccountScopes(serviceAccountScopes)
 				.setServiceAccountPrivateKey(privateKey).build();

@@ -21,13 +21,14 @@ import projectm.service.storage.StorageService;
 public class OSSStorageService implements StorageService {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
-	private String endpoint = "http://oss-cn-hangzhou.aliyuncs.com";//TODO oss config
-	private String accessKeyId = "accessKeyId";
-	private String accessKeySecret = "accessKeySecret";
 	private OSSClient ossClient;
 
 	@PostConstruct
 	public void init() {
+		// TODO config
+		String endpoint = "http://oss-cn-hangzhou.aliyuncs.com";
+		String accessKeyId = "accessKeyId";
+		String accessKeySecret = "accessKeySecret";
 		ossClient = new OSSClient(endpoint, accessKeyId, accessKeySecret);
 	}
 
