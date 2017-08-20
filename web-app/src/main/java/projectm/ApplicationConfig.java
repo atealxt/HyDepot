@@ -17,6 +17,8 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import io.atomix.AtomixReplica;
+import io.atomix.catalyst.transport.Address;
 import projectm.service.storage.StorageException;
 import projectm.service.storage.StorageService;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -87,4 +89,10 @@ public class ApplicationConfig {
 		return ResponseEntity.notFound().build();
 	}
 
+	@Bean
+	public AtomixReplica getLockService() {
+		AtomixReplica replica = AtomixReplica.builder(new Address("localhost", 8700)).build();
+		replica.bootstrap().join();
+		return replica;
+	}
 }

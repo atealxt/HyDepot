@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.atomix.concurrent.DistributedLock;
 import projectm.ApplicationConfig;
 import projectm.Constants;
 import projectm.service.storage.StorageException;
@@ -39,7 +40,7 @@ public class UploadController {
 
 	@PostConstruct
 	public void init() {
-		executorService = new ThreadPoolExecutor(0, 500, // TODO thread pool size configuable.
+		executorService = new ThreadPoolExecutor(0, 500, // TODO thread pool size configurable.
 				120L, TimeUnit.SECONDS, //
 				new LinkedBlockingQueue<Runnable>());
 	}
@@ -62,31 +63,38 @@ public class UploadController {
 			throw new StorageException("Cannot store file with relative path outside current directory " + filename);
 		}
 
-		// TODO get lock!
+		// get lock
+		DistributedLock lock = appConfig.getLockService().getLock(platformCode + "-" + documentId).join();
+		try {
+			lock.lock().join();
 
-		if (!replicate) {
-			Future<?> future = executorService
-					.submit(createUploadTask(appConfig.primaryStorage(), platformCode, documentId, file));
-			if (consensusLevel != Constants.CONSENSUS_LEVEL_LOW) {
-				future.get();
-			}
-			return "Upload success!";
-		} else {
-			List<StorageService> storageServices = appConfig.storages();
-			List<Future<?>> tasks = new ArrayList<Future<?>>();
-			for (StorageService storageService : storageServices) {
+			if (!replicate) {
 				Future<?> future = executorService
-						.submit(createUploadTask(storageService, platformCode, documentId, file));
-				tasks.add(future);
-			}
-			if (consensusLevel == Constants.CONSENSUS_LEVEL_HIGH) {
-				for (Future<?> future : tasks) {
+						.submit(createUploadTask(appConfig.primaryStorage(), platformCode, documentId, file));
+				if (consensusLevel != Constants.CONSENSUS_LEVEL_LOW) {
 					future.get();
 				}
-			} else if (consensusLevel == Constants.CONSENSUS_LEVEL_MIDDLE) {
-				tasks.get(0).get();
+				return "Upload success!";
+			} else {
+				List<StorageService> storageServices = appConfig.storages();
+				List<Future<?>> tasks = new ArrayList<Future<?>>();
+				for (StorageService storageService : storageServices) {
+					Future<?> future = executorService
+							.submit(createUploadTask(storageService, platformCode, documentId, file));
+					tasks.add(future);
+				}
+				if (consensusLevel == Constants.CONSENSUS_LEVEL_HIGH) {
+					for (Future<?> future : tasks) {
+						future.get();
+					}
+				} else if (consensusLevel == Constants.CONSENSUS_LEVEL_MIDDLE) {
+					tasks.get(0).get();
+				}
+				return "Upload success!";
 			}
-			return "Upload success!";
+		} finally {
+			lock.unlock().join();
+			lock.close().join();
 		}
 	}
 

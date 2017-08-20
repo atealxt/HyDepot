@@ -1,6 +1,9 @@
 package projectm.service.storage.gcs;
 
 import java.io.ByteArrayInputStream;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +26,6 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 
-import io.netty.handler.ssl.PemPrivateKey;
 import projectm.service.storage.StorageException;
 import projectm.service.storage.StorageService;
 
@@ -34,12 +36,13 @@ public class GCSStorageService implements StorageService {
 	private Storage storage;
 
 	@PostConstruct
-	public void init() {
+	public void init() throws NoSuchAlgorithmException, NoSuchProviderException {
 		HttpTransport transport = new NetHttpTransport();
 		JsonFactory jsonFactory = new JacksonFactory();
 		// TODO config
 		String serviceAccountEmail = "mocked";
-		PrivateKey privateKey = PemPrivateKey.valueOf("mocked".getBytes());
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA", "SUN");
+		PrivateKey privateKey = keyGen.generateKeyPair().getPrivate();
 		String gcsProjectId = null;
 		String USER_INFO_EMAIL_SCOPE = "https://www.googleapis.com/auth/userinfo.email";
 		String CLOUD_STORAGE_SCOPE = "https://www.googleapis.com/auth/devstorage.read_write";
