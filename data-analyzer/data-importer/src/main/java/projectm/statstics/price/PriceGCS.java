@@ -3,17 +3,15 @@ package projectm.statstics.price;
 import static java.lang.Math.max;
 import static projectm.statstics.price.PriceUtils.format;
 
-public class PriceS3 {
+public class PriceGCS {
 
 	private static final int MAX_CALC_DAYS = 365;
-	private static final double STORAGE_PRICE_UNIT_CLASS1 = 0.023d; // Standard Storage
-	private static final double STORAGE_PRICE_UNIT_CLASS2 = 0.0125d; // Infrequent Access Storage †
-	private static final int MIN_UNIT_SIZE_IN_KB_CLASS2 = 128;
-	@SuppressWarnings("unused")
-	private static final double OPERATION_PRICE_WRITE_UNIT_CLASS1 = 0.005d / 1000d; // Standard Storage
-	private static final double OPERATION_PRICE_READ_UNIT_CLASS1 = 0.004d / 1000d; // Standard Storage
-	private static final double OPERATION_PRICE_UNIT_CLASS2 = 0.01d / 1000d; // Infrequent Access Storage †
-	private static final double PRICE_CHANGE_CLASS = 0.01d / 1000d; // price of change class
+	private static final double STORAGE_PRICE_UNIT_CLASS1 = 0.026d; // Multi-Regional Storage
+	private static final double STORAGE_PRICE_UNIT_CLASS2 = 0.01d; // Nearline Storage
+	private static final int MIN_UNIT_SIZE_IN_KB_CLASS2 = 0;
+	private static final double OPERATION_PRICE_READ_UNIT_CLASS1 = 0.004d / 10000d; // Multi-Regional
+	private static final double OPERATION_PRICE_READ_UNIT_CLASS2 = 0.01d / 10000d; // Nearline read
+	private static final double PRICE_CHANGE_CLASS = 0.1d / 10000d; // price of change class to Nearline
 
 	public void calc(double sizeInMB, int existDaysInClass1) {
 
@@ -35,7 +33,7 @@ public class PriceS3 {
 				// use read price to calc operation price in class1 since write is a little expensive than read.
 				// class2 cheaper than cheaper class1 is ensured that move is valuable.
 				double operationPrice1 = OPERATION_PRICE_READ_UNIT_CLASS1 * numOfReadWrite;
-				double operationPrice2 = OPERATION_PRICE_UNIT_CLASS2 * numOfReadWrite;
+				double operationPrice2 = OPERATION_PRICE_READ_UNIT_CLASS2 * numOfReadWrite;
 
 				double price1 = storagePrice1 + operationPrice1;
 				double price2 = storagePrice2 + operationPrice2 + PRICE_CHANGE_CLASS;
@@ -46,8 +44,7 @@ public class PriceS3 {
 						out += "will cost less if moved to class2 and stay " + existDaysInClass2 + " days ";
 						out += "with at most read/write " + thresholdNumOfReadWrite + " times. ";
 						out += "Cost1: " + thresholdPrice1 + ", Cost2: " + thresholdPrice2 + ". ";
-						double saved = Double.valueOf(format((thresholdPrice1 - thresholdPrice2) / thresholdPrice1 * 100));
-						out += "Saved " + saved + "%";
+						out += "Saved " +  format((thresholdPrice1 - thresholdPrice2) / thresholdPrice1 * 100) + "%";
 						System.out.println(out);
 					}
 					break;
@@ -59,4 +56,5 @@ public class PriceS3 {
 			}
 		}
 	}
+
 }
