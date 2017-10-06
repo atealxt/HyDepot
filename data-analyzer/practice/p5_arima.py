@@ -22,7 +22,7 @@ print(series.head())
 series.plot()
 pyplot.show()
 
-# cacl the autocorrelation, known that first 10-12 has positive correlation. 
+# calc the autocorrelation, known that first 10-12 has positive correlation. 
 # Significant for the first 5 lags.
 autocorrelation_plot(series)
 pyplot.show()
