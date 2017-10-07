@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.annotations.ApiParam;
 import projectm.ApplicationConfig;
 import projectm.service.storage.StorageService;
 
@@ -24,7 +25,9 @@ public class DownloadController {
 
 	@GetMapping("/download")
 	public void download(//
+			@ApiParam(value = "Identity of Customer/App") //
 			@RequestParam(value = "platformCode", required = true) String platformCode,
+			@ApiParam(value = "Identity of Document") //
 			@RequestParam(value = "documentId", required = true) String documentId, //
 			HttpServletResponse response) {
 		for (StorageService storageService : appConfig.storages()) {

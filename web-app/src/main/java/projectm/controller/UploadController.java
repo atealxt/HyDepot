@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import io.atomix.concurrent.DistributedLock;
+import io.swagger.annotations.ApiParam;
 import projectm.ApplicationConfig;
 import projectm.Constants;
 import projectm.service.storage.StorageException;
@@ -47,11 +48,16 @@ public class UploadController {
 
 	@PostMapping("/upload")
 	public String upload(//
+			@ApiParam(value = "Identity of Customer/App") //
 			@RequestParam(value = "platformCode", required = true) String platformCode,
-			@RequestParam(value = "file", required = true) MultipartFile file,
+			@ApiParam(value = "Identity of Document") //
 			@RequestParam(value = "documentId", required = false) String documentId,
-			@RequestParam(value = "consensusLevel", required = false, defaultValue = "0") int consensusLevel,
-			@RequestParam(value = "replicate", required = false, defaultValue = "true") boolean replicate)
+			@ApiParam(value = "Document content") //
+			@RequestParam(value = "file", required = true) MultipartFile file,
+			@ApiParam(value = "Whether replicate data to multi-storage") //
+			@RequestParam(value = "replicate", required = false, defaultValue = "true") boolean replicate,
+			@ApiParam(value = "Consensus level. 0:High; 1:Mid; 2:Low") //
+			@RequestParam(value = "consensusLevel", required = false, defaultValue = "0") int consensusLevel)
 			throws StorageException, IOException, InterruptedException, ExecutionException {
 
 		String filename = StringUtils.cleanPath(file.getOriginalFilename());
