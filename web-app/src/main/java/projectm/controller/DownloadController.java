@@ -32,7 +32,7 @@ public class DownloadController {
 			HttpServletResponse response) {
 		for (StorageService storageService : appConfig.storages()) {
 			try {
-				byte[] object = storageService.fetch(platformCode, documentId);
+				byte[] object = storageService.fetch(platformCode, documentId, response);
 				IOUtils.write(object, response.getOutputStream());
 				return;
 			} catch (Exception e) {

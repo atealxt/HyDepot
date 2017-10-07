@@ -5,15 +5,19 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.amazonaws.util.IOUtils;
 
+import projectm.ApplicationConfig;
 import projectm.service.storage.StorageException;
 import projectm.service.storage.StorageService;
 
@@ -23,12 +27,14 @@ public class OSSStorageService implements StorageService {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	private OSSClient ossClient;
 
+	@Autowired
+	private ApplicationConfig applicationConfig;
+
 	@PostConstruct
 	public void init() {
-		// TODO config
-		String endpoint = "http://oss-cn-hangzhou.aliyuncs.com";
-		String accessKeyId = "accessKeyId";
-		String accessKeySecret = "accessKeySecret";
+		String endpoint = "http://oss-cn-beijing.aliyuncs.com";
+		String accessKeyId = applicationConfig.getOssAccessKeyId();
+		String accessKeySecret = applicationConfig.getOssAccessKeySecret();
 		ossClient = new OSSClient(endpoint, accessKeyId, accessKeySecret);
 	}
 
@@ -46,8 +52,11 @@ public class OSSStorageService implements StorageService {
 	}
 
 	@Override
-	public byte[] fetch(String bucketName, String documentId) throws StorageException {
-		InputStream stream = ossClient.getObject(bucketName, documentId).getObjectContent();
+	public byte[] fetch(String bucketName, String documentId, HttpServletResponse response) throws StorageException {
+		OSSObject obj = ossClient.getObject(bucketName, documentId);
+		response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + documentId);
+		response.setContentType(obj.getObjectMetadata().getContentType());
+		InputStream stream = obj.getObjectContent();
 		try {
 			return IOUtils.toByteArray(stream);
 		} catch (IOException e) {

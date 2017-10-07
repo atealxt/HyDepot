@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -50,6 +51,12 @@ public class ApplicationConfig {
 	@Lazy
 	private StorageService priv;
 
+	@Value("${storage.oss.accessKeyId}")
+	private String ossAccessKeyId;
+
+	@Value("${storage.oss.accessKeySecret}")
+	private String ossAccessKeySecret;
+
 	@Bean
 	public List<StorageService> storages() {
 		return Arrays.asList(s3, oss, gcs, priv);
@@ -67,6 +74,22 @@ public class ApplicationConfig {
 		caches.add(new ConcurrentMapCache(Application.CACHE_GENERAL));
 		cacheManager.setCaches(caches);
 		return cacheManager;
+	}
+
+	public String getOssAccessKeyId() {
+		return ossAccessKeyId;
+	}
+
+	public void setOssAccessKeyId(String ossAccessKeyId) {
+		this.ossAccessKeyId = ossAccessKeyId;
+	}
+
+	public String getOssAccessKeySecret() {
+		return ossAccessKeySecret;
+	}
+
+	public void setOssAccessKeySecret(String ossAccessKeySecret) {
+		this.ossAccessKeySecret = ossAccessKeySecret;
 	}
 
 	@Bean

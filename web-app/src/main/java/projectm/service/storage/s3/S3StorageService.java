@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ public class S3StorageService implements StorageService {
 	}
 
 	@Override
-	public byte[] fetch(String bucketName, String documentId) throws StorageException {
+	public byte[] fetch(String bucketName, String documentId, HttpServletResponse response) throws StorageException {
 		InputStream stream = s3client.getObject(bucketName, documentId).getObjectContent();
 		try {
 			return IOUtils.toByteArray(stream);

@@ -1,5 +1,7 @@
 package projectm.service.storage.priv;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.stereotype.Service;
 
 import projectm.service.storage.StorageException;
@@ -16,7 +18,7 @@ public class PrivateStorageService implements StorageService {
 	}
 
 	@Override
-	public byte[] fetch(String bucketName, String documentId) throws StorageException {
+	public byte[] fetch(String bucketName, String documentId, HttpServletResponse response) throws StorageException {
 		// TODO Auto-generated method stub
 		return null;
 	}

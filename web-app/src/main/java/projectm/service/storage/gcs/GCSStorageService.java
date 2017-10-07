@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public class GCSStorageService implements StorageService {
 	}
 
 	@Override
-	public byte[] fetch(String bucketName, String documentId) throws StorageException {
+	public byte[] fetch(String bucketName, String documentId, HttpServletResponse response) throws StorageException {
 		BlobId blobId = BlobId.of(bucketName, documentId);
 		return storage.readAllBytes(blobId);
 	}
