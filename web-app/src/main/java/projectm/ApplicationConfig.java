@@ -57,9 +57,15 @@ public class ApplicationConfig {
 	@Value("${storage.oss.accessKeySecret}")
 	private String ossAccessKeySecret;
 
+	@Value("${storage.s3.accessKeyId}")
+	private String s3AccessKeyId;
+
+	@Value("${storage.s3.accessKeySecret}")
+	private String s3AccessKeySecret;
+
 	@Bean
 	public List<StorageService> storages() {
-		return Arrays.asList(s3, oss, gcs, priv);
+		return Arrays.asList(s3, oss);
 	}
 
 	@Bean
@@ -90,6 +96,22 @@ public class ApplicationConfig {
 
 	public void setOssAccessKeySecret(String ossAccessKeySecret) {
 		this.ossAccessKeySecret = ossAccessKeySecret;
+	}
+
+	public String getS3AccessKeyId() {
+		return s3AccessKeyId;
+	}
+
+	public void setS3AccessKeyId(String s3AccessKeyId) {
+		this.s3AccessKeyId = s3AccessKeyId;
+	}
+
+	public String getS3AccessKeySecret() {
+		return s3AccessKeySecret;
+	}
+
+	public void setS3AccessKeySecret(String s3AccessKeySecret) {
+		this.s3AccessKeySecret = s3AccessKeySecret;
 	}
 
 	@Bean
