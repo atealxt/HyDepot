@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.ApiParam;
-import projectm.consensus.ApplicationConfig;
+import projectm.consensus.ConsensusServer;
+import projectm.consensus.State;
 
 @RestController
 @RequestMapping("api/consensus")
@@ -21,18 +22,19 @@ public class ConsensusController {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired
-	private ApplicationConfig appConfig;
+	private ConsensusServer consensusServer;
 
 	@PostMapping("/state")
-	public void changeState(//
+	public State changeState(//
 			@ApiParam(value = "State Value") //
 			@RequestParam(value = "state", required = true) String state, //
 			HttpServletRequest request, HttpServletResponse response) {
+		return consensusServer.transition(State.parse(state));
 	}
 
 	@GetMapping("/state")
-	public void getState(//
+	public State getState(//
 			HttpServletRequest request, HttpServletResponse response) {
+		return consensusServer.getState();
 	}
-
 }
