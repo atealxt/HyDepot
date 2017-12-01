@@ -73,4 +73,8 @@ public enum State {
 		}
 		throw new ConsensusException("State " + val + " not found.");
 	}
+
+	public String getVal() {
+		return val;
+	}
 }

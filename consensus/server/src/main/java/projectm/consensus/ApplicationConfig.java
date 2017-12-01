@@ -1,5 +1,9 @@
 package projectm.consensus;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,5 +41,33 @@ public class ApplicationConfig {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<?> handleGeneral(Exception exc) {
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
+
+	@Value("${projectm.server.ip}")
+	private String ip;
+	@Value("${server.port}")
+	private int port;
+	@Value("${projectm.consensus.nodes}")
+	private String nodes;
+
+	public List<NodeAddress> cluster() {
+		List<NodeAddress> list = new ArrayList<NodeAddress>();
+		for (String node : nodes.split(",")) {
+			String[] s = node.split(":");
+			if (ip.equals(s[0]) && port == Integer.parseInt(s[1])) {
+				continue;
+			}
+			NodeAddress addr = new NodeAddress(s[0], Integer.parseInt(s[1]));
+			list.add(addr);
+		}
+		return list;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public int getPort() {
+		return port;
 	}
 }

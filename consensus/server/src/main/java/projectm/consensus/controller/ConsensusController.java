@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.ApiParam;
 import projectm.consensus.ConsensusServer;
+import projectm.consensus.NodeAddress;
 import projectm.consensus.State;
 
 @RestController
@@ -36,5 +37,17 @@ public class ConsensusController {
 	public State getState(//
 			HttpServletRequest request, HttpServletResponse response) {
 		return consensusServer.getState();
+	}
+
+	@GetMapping("/notify")
+	public State notify(//
+			@ApiParam(value = "IP") //
+			@RequestParam(value = "ip", required = true) String ip, //
+			@ApiParam(value = "Port") //
+			@RequestParam(value = "port", required = true) String port, //
+			@ApiParam(value = "State Value") //
+			@RequestParam(value = "state", required = true) String state, //
+			HttpServletRequest request, HttpServletResponse response) {
+		return consensusServer.notify(new NodeAddress(ip, Integer.parseInt(port)), State.parse(state));
 	}
 }
