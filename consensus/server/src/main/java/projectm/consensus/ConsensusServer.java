@@ -1,5 +1,7 @@
 package projectm.consensus;
 
+import projectm.consensus.service.NotifyResult;
+
 public interface ConsensusServer {
 
 	void startUp();
@@ -10,5 +12,5 @@ public interface ConsensusServer {
 
 	State getState();
 
-	State notify(NodeAddress nodeAddress, State state);
+	NotifyResult notify(NodeAddress nodeAddress, State state);
 }

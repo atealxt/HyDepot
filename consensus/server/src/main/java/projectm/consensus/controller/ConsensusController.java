@@ -16,6 +16,7 @@ import io.swagger.annotations.ApiParam;
 import projectm.consensus.ConsensusServer;
 import projectm.consensus.NodeAddress;
 import projectm.consensus.State;
+import projectm.consensus.service.NotifyResult;
 
 @RestController
 @RequestMapping("api/consensus")
@@ -40,7 +41,7 @@ public class ConsensusController {
 	}
 
 	@GetMapping("/notify")
-	public State notify(//
+	public NotifyResult notify(//
 			@ApiParam(value = "IP") //
 			@RequestParam(value = "ip", required = true) String ip, //
 			@ApiParam(value = "Port") //
