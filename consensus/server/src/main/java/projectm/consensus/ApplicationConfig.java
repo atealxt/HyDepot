@@ -50,6 +50,7 @@ public class ApplicationConfig {
 	@Value("${projectm.consensus.nodes}")
 	private String nodes;
 
+	/** Not include self. */
 	public List<NodeAddress> cluster() {
 		List<NodeAddress> list = new ArrayList<NodeAddress>();
 		for (String node : nodes.split(",")) {

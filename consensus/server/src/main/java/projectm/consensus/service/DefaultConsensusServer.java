@@ -3,6 +3,7 @@ package projectm.consensus.service;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -34,13 +35,13 @@ public class DefaultConsensusServer implements ConsensusServer {
 	private ApplicationConfig appConfig;
 	private State state = State.INACTIVE;
 	private Map<NodeAddress, State> states = new HashMap<>();
+	private Map<NodeAddress, Long> candidateTenancy = new HashMap<>();
 
 	@Override
 	public void startUp() {
-		for (NodeAddress addr : appConfig.cluster()) {
-			State state = getRemoteState(addr);
-			states.put(addr, state);
-		}
+		ping();
+		new Thread(new CandidateCleanup(), "CandidateCleanup").start();
+		new Thread(new CheckAndElection(), "CheckAndElection").start();
 		transition(State.RESERVE);
 	}
 
@@ -50,9 +51,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 
 	@Override
 	public State transition(State state) {
-		// TODO Auto-generated method stub
 		// RESERVE->FOLLOWER->CANDIDATE->LEADER
-		logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " is transiting to " + state);
+		logger.info("Transiting to " + state);
 
 		switch (state) {
 		case RESERVE:
@@ -69,16 +69,18 @@ public class DefaultConsensusServer implements ConsensusServer {
 				NodeAddress addr = entry.getKey();
 				notifyRemote(addr, state);
 			}
-			if (noLeader()) {
+			if (noState(State.LEADER)) {
 				transition(State.CANDIDATE);
 			}
 			break;
 		case CANDIDATE:
+			this.state = state;
 			try {
 				Thread.sleep(500 + new Random().nextInt(5000));
 			} catch (InterruptedException e) {
 				logger.error(e.getMessage(), e);
 			}
+			ping();
 			int min = ticketstoWin(), voted = 0;
 			for (Entry<NodeAddress, State> entry : states.entrySet()) {
 				NodeAddress addr = entry.getKey();
@@ -88,10 +90,9 @@ public class DefaultConsensusServer implements ConsensusServer {
 				}
 			}
 			if (voted >= min) {
-				this.state = state;
 				transition(State.LEADER);
-			} else if (noLeader()) {
-				transition(State.CANDIDATE);
+			} else if (noState(State.LEADER)) {
+				transition(State.FOLLOWER);
 			}
 			break;
 		case LEADER:
@@ -118,17 +119,17 @@ public class DefaultConsensusServer implements ConsensusServer {
 		return n;
 	}
 
-	private boolean noLeader() {
-		if (this.state == State.LEADER) {
+	private boolean noState(State state) {
+		if (this.state == state) {
 			return false;
 		}
-		boolean hasLeader = false;
+		boolean hasState = false;
 		for (Entry<NodeAddress, State> entry : states.entrySet()) {
-			if (entry.getValue() == State.LEADER) {
-				hasLeader = true;
+			if (entry.getValue() == state) {
+				hasState = true;
 			}
 		}
-		return !hasLeader;
+		return !hasState;
 	}
 
 	private NotifyResult notifyRemote(NodeAddress addr, State state) {
@@ -149,18 +150,18 @@ public class DefaultConsensusServer implements ConsensusServer {
 		try (CloseableHttpResponse resp = httpclient.execute(httpGet)) {
 			HttpEntity entity = resp.getEntity();
 			String body = IOUtils.toString(entity.getContent());
-//			logger.info(addr + " resp is " + body);
+			// logger.info(addr + " resp is " + body);
 			ObjectMapper mapper = new ObjectMapper();
 			NotifyResult result = mapper.readValue(body, NotifyResult.class);
 			if (!result.isAccept()) {
-				logger.warn(addr + " not accept my state" + state);
+				logger.warn(addr + " not accept my state: " + state);
 			} else {
 				states.put(addr, result.getState());
 			}
 			return result;
 		} catch (Exception e) {
-			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
-			return new NotifyResult(false, State.INACTIVE); // TODO need to skip this vote.
+//			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
+			return new NotifyResult(false, State.INACTIVE);
 		}
 	}
 
@@ -178,17 +179,16 @@ public class DefaultConsensusServer implements ConsensusServer {
 		try (CloseableHttpResponse resp = httpclient.execute(httpGet)) {
 			HttpEntity entity = resp.getEntity();
 			String body = IOUtils.toString(entity.getContent()).replace("\"", "");
-			logger.info(addr + " resp is " + body);
+//			logger.info(addr + " resp is " + body);
 			return State.parse(body);
 		} catch (Exception e) {
-			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
+//			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
 			return State.INACTIVE;
 		}
 	}
 
-
 	@Override
-	public NotifyResult notify(NodeAddress nodeAddress, State state) {
+	public synchronized NotifyResult notify(NodeAddress nodeAddress, State state) {
 
 		logger.info(nodeAddress + " transit to " + state);
 
@@ -199,19 +199,22 @@ public class DefaultConsensusServer implements ConsensusServer {
 			switch (state) {
 			case RESERVE:
 				entry.setValue(state);
+				candidateTenancy.remove(nodeAddress);
 				break;
 			case FOLLOWER:
 				entry.setValue(state);
+				candidateTenancy.remove(nodeAddress);
 				break;
 			case CANDIDATE:
-				if (!noLeader()) {
+				if (!noState(State.LEADER) || !noState(State.CANDIDATE)) {
 					return new NotifyResult(false, getState());
 				}
-				// TODO remember the current CANDIDATE and not accept more for a while
 				entry.setValue(state);
+				candidateTenancy.put(nodeAddress, System.currentTimeMillis());
 				break;
 			case LEADER:
 				entry.setValue(state);
+				candidateTenancy.remove(nodeAddress);
 				break;
 			default:
 				break;
@@ -225,4 +228,58 @@ public class DefaultConsensusServer implements ConsensusServer {
 	public State getState() {
 		return state;
 	}
+
+	private class CandidateCleanup implements Runnable {
+
+		private int intervalMs = 5000;
+
+		@Override
+		public void run() {
+			while (true) {
+				try {
+					Thread.sleep(intervalMs);
+				} catch (InterruptedException e) {
+					logger.error(e.getMessage(), e);
+				}
+				for (Iterator<Entry<NodeAddress, Long>> it = candidateTenancy.entrySet().iterator(); it.hasNext();) {
+					Entry<NodeAddress, Long> entry = it.next();
+					if ((System.currentTimeMillis() - intervalMs) >= entry.getValue()) {
+						it.remove();
+						logger.info("Candidate " + entry.getKey() + " is expired.");
+					}
+				}
+			}
+		}
+	}
+
+	private void ping() {
+		for (NodeAddress addr : appConfig.cluster()) {
+			State state = getRemoteState(addr);
+			states.put(addr, state);
+		}
+	}
+
+	private class CheckAndElection implements Runnable {
+
+		private int intervalMs = 10000;
+
+		@Override
+		public void run() {
+			while (true) {
+				try {
+					Thread.sleep(intervalMs);
+					ping();
+					if (noState(State.LEADER)) {
+						logger.info("No leader in cluster, start election...");
+						transition(State.CANDIDATE);
+					}
+				} catch (InterruptedException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+
+	}
+
+	// TODO lock service
 }
