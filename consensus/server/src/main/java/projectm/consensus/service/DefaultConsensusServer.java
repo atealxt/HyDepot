@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import projectm.consensus.ApplicationConfig;
+import projectm.consensus.ConsensusException;
 import projectm.consensus.ConsensusServer;
 import projectm.consensus.NodeAddress;
 import projectm.consensus.State;
@@ -36,6 +37,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 	private State state = State.INACTIVE;
 	private Map<NodeAddress, State> states = new HashMap<>();
 	private Map<NodeAddress, Long> candidateTenancy = new HashMap<>();
+	private Map<String, Resource> memoryResources = new HashMap<>();
 
 	@Override
 	public void startUp() {
@@ -81,7 +83,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 				logger.error(e.getMessage(), e);
 			}
 			ping();
-			int min = ticketstoWin(), voted = 0;
+			int min = ticketsToWin(), voted = 0;
 			for (Entry<NodeAddress, State> entry : states.entrySet()) {
 				NodeAddress addr = entry.getKey();
 				boolean accept = notifyRemote(addr, state).isAccept();
@@ -109,7 +111,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 		return getState();
 	}
 
-	private int ticketstoWin() {
+	private int ticketsToWin() {
 		int n = 0;
 		for (Entry<NodeAddress, State> state : states.entrySet()) {
 			if (state.getValue() != State.INACTIVE) {
@@ -160,7 +162,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			}
 			return result;
 		} catch (Exception e) {
-//			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
+			// logger.info("Failed to talk to " + addr + ": " + e.getMessage());
 			return new NotifyResult(false, State.INACTIVE);
 		}
 	}
@@ -179,10 +181,10 @@ public class DefaultConsensusServer implements ConsensusServer {
 		try (CloseableHttpResponse resp = httpclient.execute(httpGet)) {
 			HttpEntity entity = resp.getEntity();
 			String body = IOUtils.toString(entity.getContent()).replace("\"", "");
-//			logger.info(addr + " resp is " + body);
+			// logger.info(addr + " resp is " + body);
 			return State.parse(body);
 		} catch (Exception e) {
-//			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
+			// logger.info("Failed to talk to " + addr + ": " + e.getMessage());
 			return State.INACTIVE;
 		}
 	}
@@ -229,6 +231,20 @@ public class DefaultConsensusServer implements ConsensusServer {
 		return state;
 	}
 
+	@Override
+	public NodeAddress getLeaderAddress() {
+		for (Entry<NodeAddress, State> entry : states.entrySet()) {
+			if (entry.getValue() == State.LEADER) {
+				return entry.getKey();
+			}
+		}
+		if (state == State.LEADER) {
+			logger.warn("I'm already the leader!");
+			return new NodeAddress(appConfig.getIp(), appConfig.getPort());
+		}
+		throw new ConsensusException("No leader in cluster yet.");
+	}
+
 	private class CandidateCleanup implements Runnable {
 
 		private int intervalMs = 5000;
@@ -270,8 +286,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 					Thread.sleep(intervalMs);
 					ping();
 					if (noState(State.LEADER)) {
-						logger.info("No leader in cluster, start election...");
-						transition(State.CANDIDATE);
+						logger.info("Leader is gone, start new election...");
+						transition(State.CANDIDATE); //FIXME base on log
 					}
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
@@ -279,6 +295,32 @@ public class DefaultConsensusServer implements ConsensusServer {
 			}
 		}
 
+	}
+
+	/** Only useful for leader */
+	@Override
+	public Resource getResource(String key) {
+		if (!memoryResources.containsKey(key)) {
+			return new Resource(key);
+		}
+		return memoryResources.get(key);
+	}
+
+	@Override
+	public Resource addResource(String key, String value) {
+		if (memoryResources.containsKey(key)) {
+			Resource resource = memoryResources.get(key);
+			resource.getId().incrementAndGet();
+			resource.setValue(value);
+			return resource;
+		} else {
+			Resource resource = new Resource(key, value);
+			memoryResources.put(key, resource);
+			if (getState() == State.LEADER) {
+				// notify followers
+			}
+			return resource;
+		}
 	}
 
 	// TODO lock service

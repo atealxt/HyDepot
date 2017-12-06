@@ -1,6 +1,7 @@
 package projectm.consensus;
 
 import projectm.consensus.service.NotifyResult;
+import projectm.consensus.service.Resource;
 
 public interface ConsensusServer {
 
@@ -12,5 +13,11 @@ public interface ConsensusServer {
 
 	State getState();
 
+	NodeAddress getLeaderAddress();
+
 	NotifyResult notify(NodeAddress nodeAddress, State state);
+
+	Resource getResource(String key);
+
+	Resource addResource(String key, String value);
 }

@@ -51,4 +51,19 @@ public class ConsensusController {
 			HttpServletRequest request, HttpServletResponse response) {
 		return consensusServer.notify(new NodeAddress(ip, Integer.parseInt(port)), State.parse(state));
 	}
+
+	@GetMapping("/resource")
+	public String getResource(//
+			@ApiParam(value = "key") //
+			@RequestParam(value = "key", required = true) String key, //
+			HttpServletRequest request, HttpServletResponse response) {
+		// redirect to leader if it's not.
+		if (consensusServer.getState() != State.LEADER) {
+			NodeAddress leader = consensusServer.getLeaderAddress();
+			response.setStatus(HttpServletResponse.SC_FOUND);
+			response.setHeader("Location", leader.getHttpAddr() + "/api/consensus/resource?key=" + key);
+			return null;
+		}
+		return consensusServer.getResource(key).getValue();
+	}
 }

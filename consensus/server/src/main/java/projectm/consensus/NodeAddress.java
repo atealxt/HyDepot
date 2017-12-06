@@ -59,4 +59,8 @@ public class NodeAddress {
 	public String toString() {
 		return ip + ":" + port;
 	}
+
+	public String getHttpAddr() {
+		return "http://" + ip + ":" + port;
+	}
 }
