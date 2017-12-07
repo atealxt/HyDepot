@@ -1,5 +1,7 @@
 package projectm.consensus.controller;
 
+import java.io.IOException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -17,6 +19,7 @@ import projectm.consensus.ConsensusServer;
 import projectm.consensus.NodeAddress;
 import projectm.consensus.State;
 import projectm.consensus.service.NotifyResult;
+import projectm.consensus.service.Resource;
 
 @RestController
 @RequestMapping("api/consensus")
@@ -53,7 +56,7 @@ public class ConsensusController {
 	}
 
 	@GetMapping("/resource")
-	public String getResource(//
+	public Resource getResource(//
 			@ApiParam(value = "key") //
 			@RequestParam(value = "key", required = true) String key, //
 			HttpServletRequest request, HttpServletResponse response) {
@@ -64,6 +67,24 @@ public class ConsensusController {
 			response.setHeader("Location", leader.getHttpAddr() + "/api/consensus/resource?key=" + key);
 			return null;
 		}
-		return consensusServer.getResource(key).getValue();
+		return consensusServer.getResource(key);
+	}
+
+	@PostMapping("/resource")
+	public Resource addResource(//
+			@ApiParam(value = "key") //
+			@RequestParam(value = "key", required = true) String key, //
+			@ApiParam(value = "value") //
+			@RequestParam(value = "value", required = true) String value, //
+			@ApiParam(value = "leader") //
+			@RequestParam(value = "leader", required = false, defaultValue = "true") boolean leader, //
+			HttpServletRequest request, HttpServletResponse response) throws IOException {
+		if (leader && consensusServer.getState() != State.LEADER) {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			String msg = "This is not leader, you need to resend the request to " + consensusServer.getLeaderAddress();
+			response.getOutputStream().write(msg.getBytes());
+			return null;
+		}
+		return consensusServer.addResource(key, value);
 	}
 }

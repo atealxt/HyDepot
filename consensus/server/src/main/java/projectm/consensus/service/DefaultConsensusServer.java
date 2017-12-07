@@ -1,20 +1,27 @@
 package projectm.consensus.service;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +93,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			int min = ticketsToWin(), voted = 0;
 			for (Entry<NodeAddress, State> entry : states.entrySet()) {
 				NodeAddress addr = entry.getKey();
-				boolean accept = notifyRemote(addr, state).isAccept();
+				boolean accept = notifyRemote(addr, state).isAccept();// TODO ASYNC
 				if (accept) {
 					voted++;
 				}
@@ -101,7 +108,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			this.state = state;
 			for (Entry<NodeAddress, State> entry : states.entrySet()) {
 				NodeAddress addr = entry.getKey();
-				notifyRemote(addr, state);
+				notifyRemote(addr, state);// TODO ASYNC
 			}
 			break;
 		default:
@@ -268,7 +275,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 		}
 	}
 
-	private void ping() {
+	private void ping() { // TODO ASYNC
 		for (NodeAddress addr : appConfig.cluster()) {
 			State state = getRemoteState(addr);
 			states.put(addr, state);
@@ -286,7 +293,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 					Thread.sleep(intervalMs);
 					ping();
 					if (noState(State.LEADER)) {
-						logger.info("Leader is gone, start new election...");
+						logger.info("No Leader, start new election...");
 						transition(State.CANDIDATE); //FIXME base on log
 					}
 				} catch (InterruptedException e) {
@@ -297,7 +304,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 
 	}
 
-	/** Only useful for leader */
+	/** Only useful for leader. Follows request will redirect to Leader. */
 	@Override
 	public Resource getResource(String key) {
 		if (!memoryResources.containsKey(key)) {
@@ -308,18 +315,58 @@ public class DefaultConsensusServer implements ConsensusServer {
 
 	@Override
 	public Resource addResource(String key, String value) {
+		Resource resource;
 		if (memoryResources.containsKey(key)) {
-			Resource resource = memoryResources.get(key);
+			resource = memoryResources.get(key);
 			resource.getId().incrementAndGet();
 			resource.setValue(value);
-			return resource;
+			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
 		} else {
-			Resource resource = new Resource(key, value);
+			resource = new Resource(key, value);
 			memoryResources.put(key, resource);
-			if (getState() == State.LEADER) {
-				// notify followers
+			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " created " + resource);
+		}
+		if (getState() == State.LEADER) {
+			// notify followers
+			replicate(resource);
+		}
+		return resource;
+	}
+
+	private void replicate(Resource resource) {
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		for (Entry<NodeAddress, State> entry : states.entrySet()) { // TODO ASYNC
+			if (entry.getValue() != State.FOLLOWER) {
+				continue;
 			}
-			return resource;
+			NodeAddress addr = entry.getKey();
+			URI uri = null;
+			try {
+				uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
+						.setPort(addr.getPort()).setPath("/api/consensus/resource")//
+						.build();
+			} catch (URISyntaxException e) {
+				logger.error(e.getMessage(), e);
+			}
+			HttpPost httpPost = new HttpPost(uri);
+			List<NameValuePair> parameters = new ArrayList<>();
+			parameters.add(new BasicNameValuePair("key", resource.getKey()));
+			parameters.add(new BasicNameValuePair("value", resource.getValue()));
+			parameters.add(new BasicNameValuePair("leader", "false"));
+			try {
+				httpPost.setEntity(new UrlEncodedFormEntity(parameters));
+			} catch (UnsupportedEncodingException e) {
+				logger.error(e.getMessage(), e);
+			}
+			try (CloseableHttpResponse resp = httpclient.execute(httpPost)) {
+				HttpEntity entity = resp.getEntity();
+				String body = IOUtils.toString(entity.getContent());
+				ObjectMapper mapper = new ObjectMapper();
+				@SuppressWarnings("unused")
+				Resource result = mapper.readValue(body, Resource.class);
+			} catch (Exception e) {
+				 logger.info("Failed to talk to " + addr + ": " + e.getMessage());
+			}
 		}
 	}
 

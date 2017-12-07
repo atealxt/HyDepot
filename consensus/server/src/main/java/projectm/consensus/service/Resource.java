@@ -8,8 +8,8 @@ public class Resource {
 	private String key;
 	private String value;
 
-	public AtomicLong getId() {
-		return id;
+	public Resource() {
+		super();
 	}
 
 	public Resource(String key) {
@@ -21,6 +21,10 @@ public class Resource {
 		super();
 		this.key = key;
 		this.value = value;
+	}
+
+	public AtomicLong getId() {
+		return id;
 	}
 
 	public String getKey() {
@@ -37,5 +41,10 @@ public class Resource {
 
 	public void setValue(String value) {
 		this.value = value;
+	}
+
+	@Override
+	public String toString() {
+		return "Resource [id=" + id + ", key=" + key + ", value=" + value + "]";
 	}
 }
