@@ -90,15 +90,11 @@ public class DefaultConsensusServer implements ConsensusServer {
 				logger.error(e.getMessage(), e);
 			}
 			ping();
-			int min = ticketsToWin(), voted = 0;
-			for (Entry<NodeAddress, State> entry : states.entrySet()) {
-				NodeAddress addr = entry.getKey();
-				boolean accept = notifyRemote(addr, state).isAccept();// TODO ASYNC
-				if (accept) {
-					voted++;
-				}
-			}
-			if (voted >= min) {
+			int min = ticketsToWin();
+			// TODO base on the latest log
+			TaskNotifyRemote notification = new TaskNotifyRemote(this, states, state).buildConsensus(min);
+			notification.execute();
+			if (notification.getVote() >= min) {
 				transition(State.LEADER);
 			} else if (noState(State.LEADER)) {
 				transition(State.FOLLOWER);
@@ -106,10 +102,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			break;
 		case LEADER:
 			this.state = state;
-			for (Entry<NodeAddress, State> entry : states.entrySet()) {
-				NodeAddress addr = entry.getKey();
-				notifyRemote(addr, state);// TODO ASYNC
-			}
+			new TaskNotifyRemote(this, states, state).execute();
 			break;
 		default:
 			break;
@@ -141,7 +134,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 		return !hasState;
 	}
 
-	private NotifyResult notifyRemote(NodeAddress addr, State state) {
+	@Override
+	public NotifyResult notifyRemote(NodeAddress addr, State state) {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		URI uri = null;
 		try {
@@ -275,11 +269,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 		}
 	}
 
-	private void ping() { // TODO ASYNC
-		for (NodeAddress addr : appConfig.cluster()) {
-			State state = getRemoteState(addr);
-			states.put(addr, state);
-		}
+	private void ping() {
+		new TaskPing(this, appConfig).execute();
 	}
 
 	private class CheckAndElection implements Runnable {
@@ -294,7 +285,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 					ping();
 					if (noState(State.LEADER)) {
 						logger.info("No Leader, start new election...");
-						transition(State.CANDIDATE); //FIXME base on log
+						transition(State.CANDIDATE); // FIXME base on log
 					}
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
@@ -334,40 +325,45 @@ public class DefaultConsensusServer implements ConsensusServer {
 	}
 
 	private void replicate(Resource resource) {
+		new TaskReplicate(this, states, resource).execute();
+	}
+
+	@Override
+	public void replicate(NodeAddress addr, Resource resource) {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-		for (Entry<NodeAddress, State> entry : states.entrySet()) { // TODO ASYNC
-			if (entry.getValue() != State.FOLLOWER) {
-				continue;
-			}
-			NodeAddress addr = entry.getKey();
-			URI uri = null;
-			try {
-				uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
-						.setPort(addr.getPort()).setPath("/api/consensus/resource")//
-						.build();
-			} catch (URISyntaxException e) {
-				logger.error(e.getMessage(), e);
-			}
-			HttpPost httpPost = new HttpPost(uri);
-			List<NameValuePair> parameters = new ArrayList<>();
-			parameters.add(new BasicNameValuePair("key", resource.getKey()));
-			parameters.add(new BasicNameValuePair("value", resource.getValue()));
-			parameters.add(new BasicNameValuePair("leader", "false"));
-			try {
-				httpPost.setEntity(new UrlEncodedFormEntity(parameters));
-			} catch (UnsupportedEncodingException e) {
-				logger.error(e.getMessage(), e);
-			}
-			try (CloseableHttpResponse resp = httpclient.execute(httpPost)) {
-				HttpEntity entity = resp.getEntity();
-				String body = IOUtils.toString(entity.getContent());
-				ObjectMapper mapper = new ObjectMapper();
-				@SuppressWarnings("unused")
-				Resource result = mapper.readValue(body, Resource.class);
-			} catch (Exception e) {
-				 logger.info("Failed to talk to " + addr + ": " + e.getMessage());
-			}
+		URI uri = null;
+		try {
+			uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
+					.setPort(addr.getPort()).setPath("/api/consensus/resource")//
+					.build();
+		} catch (URISyntaxException e) {
+			logger.error(e.getMessage(), e);
 		}
+		HttpPost httpPost = new HttpPost(uri);
+		List<NameValuePair> parameters = new ArrayList<>();
+		parameters.add(new BasicNameValuePair("key", resource.getKey()));
+		parameters.add(new BasicNameValuePair("value", resource.getValue()));
+		parameters.add(new BasicNameValuePair("leader", "false"));
+		try {
+			httpPost.setEntity(new UrlEncodedFormEntity(parameters));
+		} catch (UnsupportedEncodingException e) {
+			logger.error(e.getMessage(), e);
+		}
+		try (CloseableHttpResponse resp = httpclient.execute(httpPost)) {
+			HttpEntity entity = resp.getEntity();
+			String body = IOUtils.toString(entity.getContent());
+			ObjectMapper mapper = new ObjectMapper();
+			@SuppressWarnings("unused")
+			Resource result = mapper.readValue(body, Resource.class);
+		} catch (Exception e) {
+			logger.info("Failed to talk to " + addr + ": " + e.getMessage());
+		}
+	}
+
+	@Override
+	public void updateRemoteState(NodeAddress addr) {
+		State state = getRemoteState(addr);
+		states.put(addr, state);
 	}
 
 	// TODO lock service
