@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -45,6 +47,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 	private Map<NodeAddress, State> states = new HashMap<>();
 	private Map<NodeAddress, Long> candidateTenancy = new HashMap<>();
 	private Map<String, Resource> memoryResources = new HashMap<>();
+	private final Lock lockResource = new ReentrantLock();
 
 	@Override
 	public void startUp() {
@@ -96,7 +99,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			notification.execute();
 			if (notification.getVote() >= min) {
 				transition(State.LEADER);
-			} else if (noState(State.LEADER)) {
+			} else {
 				transition(State.FOLLOWER);
 			}
 			break;
@@ -285,7 +288,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 					ping();
 					if (noState(State.LEADER)) {
 						logger.info("No Leader, start new election...");
-						transition(State.CANDIDATE); // FIXME base on log
+						transition(State.CANDIDATE);
 					}
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
@@ -298,30 +301,90 @@ public class DefaultConsensusServer implements ConsensusServer {
 	/** Only useful for leader. Follows request will redirect to Leader. */
 	@Override
 	public Resource getResource(String key) {
-		if (!memoryResources.containsKey(key)) {
-			return new Resource(key);
+		lockResource.lock();
+		try {
+			if (!memoryResources.containsKey(key)) {
+				return null;
+			}
+			return memoryResources.get(key);
+		} finally {
+			lockResource.unlock();
 		}
-		return memoryResources.get(key);
 	}
 
 	@Override
-	public Resource addResource(String key, String value) {
-		Resource resource;
-		if (memoryResources.containsKey(key)) {
-			resource = memoryResources.get(key);
-			resource.getId().incrementAndGet();
-			resource.setValue(value);
-			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
-		} else {
-			resource = new Resource(key, value);
-			memoryResources.put(key, resource);
-			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " created " + resource);
+	public Resource addResource(String key, String value, Long id) {
+		lockResource.lock();
+		try {
+			Resource resource;
+
+			if (getState() == State.LEADER) {
+				if (id == null) {
+					if (memoryResources.containsKey(key)) {
+						throw new ConsensusException("Invalid state.");
+					}
+					resource = new Resource(key, value);
+					memoryResources.put(key, resource);
+					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " created " + resource);
+				} else {
+					if (!memoryResources.containsKey(key)) {
+						throw new ConsensusException("Invalid state.");
+					}
+					resource = memoryResources.get(key);
+					if (resource.getId().get() != id) {
+						logger.info("Fail to update value in concurrent case: " + key + ", " + id);
+						return null;
+					}
+					resource.setValue(value);
+					resource.getId().incrementAndGet();
+					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
+				}
+				// notify followers
+				replicate(resource);
+			} else {
+				if (!memoryResources.containsKey(key)) {
+					resource = new Resource(key, value);
+					memoryResources.put(key, resource);
+					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " created " + resource);
+				} else {
+					resource = memoryResources.get(key);
+					resource.setValue(value);
+					resource.getId().incrementAndGet();
+					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
+				}
+			}
+
+			return resource;
+		} finally {
+			lockResource.unlock();
 		}
-		if (getState() == State.LEADER) {
-			// notify followers
-			replicate(resource);
+	}
+
+	@Override
+	public Resource deleteResource(String key, Long id) {
+		lockResource.lock(); // TODO key level lock.
+		try {
+			if (!memoryResources.containsKey(key)) {
+				throw new ConsensusException("Invalid state.");
+			}
+			Resource resource = memoryResources.get(key);
+			if (getState() == State.LEADER) {
+				if (resource.getId().get() != id) {
+					logger.info("Fail to update value in concurrent case: " + key + ", " + id);
+					return null;
+				}
+			}
+			memoryResources.remove(key); // TODO incr global seq for followers for re-election comparing.
+			resource.setDeleted(true);
+			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " deleted resource: " + key);
+			if (getState() == State.LEADER) {
+				// notify followers
+				replicate(resource);
+			}
+			return resource;
+		} finally {
+			lockResource.unlock();
 		}
-		return resource;
 	}
 
 	private void replicate(Resource resource) {
@@ -343,6 +406,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 		List<NameValuePair> parameters = new ArrayList<>();
 		parameters.add(new BasicNameValuePair("key", resource.getKey()));
 		parameters.add(new BasicNameValuePair("value", resource.getValue()));
+		parameters.add(new BasicNameValuePair("delete", String.valueOf(resource.isDeleted())));
 		parameters.add(new BasicNameValuePair("leader", "false"));
 		try {
 			httpPost.setEntity(new UrlEncodedFormEntity(parameters));

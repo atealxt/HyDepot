@@ -19,11 +19,14 @@ public interface ConsensusServer {
 
 	Resource getResource(String key);
 
-	Resource addResource(String key, String value);
+	Resource addResource(String key, String value, Long id);
+
+	Resource deleteResource(String key, Long id);
 
 	void updateRemoteState(NodeAddress addr);
 
 	void replicate(NodeAddress addr, Resource resource);
 
 	NotifyResult notifyRemote(NodeAddress addr, State state);
+
 }

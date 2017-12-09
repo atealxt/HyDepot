@@ -67,7 +67,11 @@ public class ConsensusController {
 			response.setHeader("Location", leader.getHttpAddr() + "/api/consensus/resource?key=" + key);
 			return null;
 		}
-		return consensusServer.getResource(key);
+		Resource resource = consensusServer.getResource(key);
+		if (resource == null) {
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+		}
+		return resource;
 	}
 
 	@PostMapping("/resource")
@@ -75,7 +79,11 @@ public class ConsensusController {
 			@ApiParam(value = "key") //
 			@RequestParam(value = "key", required = true) String key, //
 			@ApiParam(value = "value") //
-			@RequestParam(value = "value", required = true) String value, //
+			@RequestParam(value = "value", required = false) String value, //
+			@ApiParam(value = "id") //
+			@RequestParam(value = "id", required = false) Long id, //
+			@ApiParam(value = "delete") //
+			@RequestParam(value = "delete", required = false) boolean delete, //
 			@ApiParam(value = "leader") //
 			@RequestParam(value = "leader", required = false, defaultValue = "true") boolean leader, //
 			HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -85,6 +93,10 @@ public class ConsensusController {
 			response.getOutputStream().write(msg.getBytes());
 			return null;
 		}
-		return consensusServer.addResource(key, value);
+		if (delete) {
+			return consensusServer.deleteResource(key, id);
+		} else {
+			return consensusServer.addResource(key, value, id);
+		}
 	}
 }

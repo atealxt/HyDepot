@@ -7,6 +7,7 @@ public class Resource {
 	private AtomicLong id = new AtomicLong();
 	private String key;
 	private String value;
+	private boolean deleted;
 
 	public Resource() {
 		super();
@@ -41,6 +42,14 @@ public class Resource {
 
 	public void setValue(String value) {
 		this.value = value;
+	}
+
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
 	}
 
 	@Override
