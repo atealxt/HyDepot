@@ -75,7 +75,7 @@ public class ConsensusController {
 	}
 
 	@PostMapping("/resource")
-	public Resource addResource(//
+	public Resource updateResource(//
 			@ApiParam(value = "key") //
 			@RequestParam(value = "key", required = true) String key, //
 			@ApiParam(value = "value") //

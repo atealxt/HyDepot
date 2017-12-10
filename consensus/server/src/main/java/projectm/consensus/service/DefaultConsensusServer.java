@@ -369,7 +369,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			}
 			Resource resource = memoryResources.get(key);
 			if (getState() == State.LEADER) {
-				if (resource.getId().get() != id) {
+				if (id == null || resource.getId().get() != id) {
 					logger.info("Fail to update value in concurrent case: " + key + ", " + id);
 					return null;
 				}
