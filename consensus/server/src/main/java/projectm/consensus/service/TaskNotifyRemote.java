@@ -78,7 +78,7 @@ public class TaskNotifyRemote implements Task {
 		if (consensus) {
 			lockConsensus.lock();
 			try {
-				complete.await();
+				complete.await(10, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				logger.error(e.getMessage(), e);
 			} finally {

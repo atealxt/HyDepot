@@ -38,7 +38,7 @@ import projectm.consensus.NodeAddress;
 import projectm.consensus.State;
 
 @Service
-public class DefaultConsensusServer implements ConsensusServer {
+public class DefaultConsensusServerL2 implements ConsensusServer {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired
@@ -48,8 +48,6 @@ public class DefaultConsensusServer implements ConsensusServer {
 	private Map<NodeAddress, Long> candidateTenancy = new HashMap<>();
 	private Map<String, Resource> memoryResources = new HashMap<>();
 	private final Lock lockResource = new ReentrantLock();
-	@Autowired
-	private DefaultConsensusServerL2 consensusServerL2;
 
 	@Override
 	public void startUp() {
@@ -107,6 +105,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			break;
 		case LEADER:
 			this.state = state;
+			// TODO become the leader of l2. 1)change dns 2)get repli info from l1 leader.
 			new TaskNotifyRemote(this, states, state).execute();
 			break;
 		default:
@@ -145,7 +144,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 		URI uri = null;
 		try {
 			uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
-					.setPort(addr.getPort()).setPath("/api/consensus/notify")//
+					.setPort(addr.getPort()).setPath("/api/consensusL2/notify")//
 					.setParameter("ip", appConfig.getIp())//
 					.setParameter("port", String.valueOf(appConfig.getPort()))//
 					.setParameter("state", state.getVal())//
@@ -178,7 +177,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 		URI uri = null;
 		try {
 			uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
-					.setPort(addr.getPort()).setPath("/api/consensus/state")//
+					.setPort(addr.getPort()).setPath("/api/consensusL2/state")//
 					.build();
 		} catch (URISyntaxException e) {
 			logger.error(e.getMessage(), e);
@@ -391,7 +390,6 @@ public class DefaultConsensusServer implements ConsensusServer {
 
 	private void replicate(Resource resource) {
 		new TaskReplicate(this, resource).execute();
-		new TaskReplicate(this.consensusServerL2, resource).execute();
 	}
 
 	@Override
@@ -400,7 +398,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 		URI uri = null;
 		try {
 			uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
-					.setPort(addr.getPort()).setPath("/api/consensus/resource")//
+					.setPort(addr.getPort()).setPath("/api/consensusL2/resource")//
 					.build();
 		} catch (URISyntaxException e) {
 			logger.error(e.getMessage(), e);
@@ -435,12 +433,12 @@ public class DefaultConsensusServer implements ConsensusServer {
 
 	@Override
 	public List<NodeAddress> getCluster() {
-		return appConfig.cluster();
+		return appConfig.clusterL2();
 	}
 
 	@Override
 	public boolean strongConsist() {
-		return true;
+		return false;
 	}
 
 	@Override

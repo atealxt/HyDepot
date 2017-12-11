@@ -49,11 +49,33 @@ public class ApplicationConfig {
 	private int port;
 	@Value("${projectm.consensus.nodes}")
 	private String nodes;
+	@Value("${projectm.consensus.l2.nodes}")
+	private String nodesL2;
 
 	/** Not include self. */
 	public List<NodeAddress> cluster() {
 		List<NodeAddress> list = new ArrayList<NodeAddress>();
+		if (nodes.isEmpty()) {
+			return list;
+		}
 		for (String node : nodes.split(",")) {
+			String[] s = node.split(":");
+			if (ip.equals(s[0]) && port == Integer.parseInt(s[1])) {
+				continue;
+			}
+			NodeAddress addr = new NodeAddress(s[0], Integer.parseInt(s[1]));
+			list.add(addr);
+		}
+		return list;
+	}
+
+	/** Not include self. */
+	public List<NodeAddress> clusterL2() {
+		List<NodeAddress> list = new ArrayList<NodeAddress>();
+		if (nodesL2.isEmpty()) {
+			return list;
+		}
+		for (String node : nodesL2.split(",")) {
 			String[] s = node.split(":");
 			if (ip.equals(s[0]) && port == Integer.parseInt(s[1])) {
 				continue;
@@ -70,5 +92,13 @@ public class ApplicationConfig {
 
 	public int getPort() {
 		return port;
+	}
+
+	public String getNodes() {
+		return nodes;
+	}
+
+	public String getNodesL2() {
+		return nodesL2;
 	}
 }

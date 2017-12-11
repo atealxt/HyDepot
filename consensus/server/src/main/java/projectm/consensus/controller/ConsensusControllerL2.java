@@ -17,17 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.annotations.ApiParam;
 import projectm.consensus.NodeAddress;
 import projectm.consensus.State;
-import projectm.consensus.service.DefaultConsensusServer;
+import projectm.consensus.service.DefaultConsensusServerL2;
 import projectm.consensus.service.NotifyResult;
 import projectm.consensus.service.Resource;
 
 @RestController
-@RequestMapping("api/consensus")
-public class ConsensusController {
+@RequestMapping("api/consensusL2")
+public class ConsensusControllerL2 {
 
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	@Autowired
-	private DefaultConsensusServer consensusServer;
+	private DefaultConsensusServerL2 consensusServer;
 
 	@PostMapping("/state")
 	public State changeState(//
@@ -64,7 +64,7 @@ public class ConsensusController {
 		if (consensusServer.getState() != State.LEADER) {
 			NodeAddress leader = consensusServer.getLeaderAddress();
 			response.setStatus(HttpServletResponse.SC_FOUND);
-			response.setHeader("Location", leader.getHttpAddr() + "/api/consensus/resource?key=" + key);
+			response.setHeader("Location", leader.getHttpAddr() + "/api/consensusL2/resource?key=" + key);
 			return null;
 		}
 		Resource resource = consensusServer.getResource(key);

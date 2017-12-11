@@ -1,12 +1,12 @@
 package projectm.consensus.service;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import projectm.consensus.ApplicationConfig;
 import projectm.consensus.ConsensusServer;
 import projectm.consensus.NodeAddress;
 
@@ -15,12 +15,12 @@ public class TaskPing implements Task {
 	protected Logger logger = LoggerFactory.getLogger(getClass());
 	private CountDownLatch counter;
 	private ConsensusServer server;
-	private ApplicationConfig appConfig;
+	private List<NodeAddress> cluster;
 
-	public TaskPing(ConsensusServer server, ApplicationConfig appConfig) {
+	public TaskPing(ConsensusServer server) {
 		this.server = server;
-		this.appConfig = appConfig;
-		this.counter = new CountDownLatch(appConfig.cluster().size());
+		this.cluster = server.getCluster();
+		this.counter = new CountDownLatch(cluster.size());
 	}
 
 	private class Ping implements Runnable {
@@ -40,7 +40,7 @@ public class TaskPing implements Task {
 
 	@Override
 	public void execute() {
-		for (NodeAddress addr : appConfig.cluster()) {
+		for (NodeAddress addr : cluster) {
 			new Thread(new Ping(addr)).start();
 		}
 		try {

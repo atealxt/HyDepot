@@ -21,9 +21,9 @@ public class TaskReplicate implements Task {
 	private Resource resource;
 	private Map<NodeAddress, State> states = new HashMap<>();
 
-	public TaskReplicate(ConsensusServer server, Map<NodeAddress, State> states, Resource resource) {
+	public TaskReplicate(ConsensusServer server, Resource resource) {
 		this.server = server;
-		this.states = states;
+		this.states = server.geStates();
 		int numFollowers = 0;
 		for (Entry<NodeAddress, State> entry : states.entrySet()) {
 			if (entry.getValue() == State.FOLLOWER) {
@@ -57,7 +57,11 @@ public class TaskReplicate implements Task {
 			}
 			new Thread(new Replicate(entry.getKey())).start();
 		}
+		if (!server.strongConsist()) {
+			return;
+		}
 		try {
+			// TODO more than half is fine
 			counter.await(10, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			logger.error(e.getMessage(), e);

@@ -1,5 +1,8 @@
 package projectm.consensus;
 
+import java.util.List;
+import java.util.Map;
+
 import projectm.consensus.service.NotifyResult;
 import projectm.consensus.service.Resource;
 
@@ -29,4 +32,9 @@ public interface ConsensusServer {
 
 	NotifyResult notifyRemote(NodeAddress addr, State state);
 
+	List<NodeAddress> getCluster();
+
+	boolean strongConsist();
+
+	Map<NodeAddress, State> geStates();
 }
