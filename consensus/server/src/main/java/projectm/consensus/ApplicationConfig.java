@@ -53,6 +53,7 @@ public class ApplicationConfig {
 	private String nodesL2;
 
 	/** Not include self. */
+	@Bean
 	public List<NodeAddress> cluster() {
 		List<NodeAddress> list = new ArrayList<NodeAddress>();
 		if (nodes.isEmpty()) {
@@ -70,6 +71,7 @@ public class ApplicationConfig {
 	}
 
 	/** Not include self. */
+	@Bean
 	public List<NodeAddress> clusterL2() {
 		List<NodeAddress> list = new ArrayList<NodeAddress>();
 		if (nodesL2.isEmpty()) {

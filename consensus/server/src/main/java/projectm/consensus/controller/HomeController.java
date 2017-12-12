@@ -15,7 +15,7 @@ import projectm.consensus.service.DefaultConsensusServerL2;
 public class HomeController {
 
 	@Resource
-	private ApplicationConfig applicationConfig;
+	private ApplicationConfig appConfig;
 	@Resource
 	private DefaultConsensusServer consensusServer;
 	@Resource
@@ -28,7 +28,7 @@ public class HomeController {
 				"<html>\r\n" + //
 				"<head>\r\n" + //
 				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\r\n" + //
-				"<title>Secfox Cascading Interfaces</title>\r\n" + //
+				"<title>Project M Consensus Server</title>\r\n" + //
 				"</head>\r\n" + //
 				"<body>" + //
 
@@ -37,32 +37,31 @@ public class HomeController {
 				"	<table>\r\n" + //
 				"		<tr>\r\n" + //
 				"			<td>IP</td>\r\n" + //
-				"			<td>" + applicationConfig.getIp()//
+				"			<td>" + appConfig.getIp()//
 				+ "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"		<tr>\r\n" + //
 				"			<td>Port</td>\r\n" + //
-				"			<td>" + applicationConfig.getPort()//
+				"			<td>" + appConfig.getPort()//
 				+ "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"		<tr>\r\n" + //
 				"			<td>Cluster</td>\r\n" + //
-				"			<td>" + applicationConfig.getNodes()//
+				"			<td>" + appConfig.getNodes()//
 				+ "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"		<tr>\r\n" + //
 				"			<td>Status</td>\r\n" + //
-				"			<td>" + consensusServer.getState()//
+				"			<td>" + (appConfig.cluster().isEmpty() ? "" : consensusServer.getState())//
 				+ "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"		<tr>\r\n" + //
 				"			<td>Second Level Cluster</td>\r\n" + //
-				"			<td>" + applicationConfig.getNodesL2()
-				+ "</td>\r\n" + //
+				"			<td>" + appConfig.getNodesL2() + "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"		<tr>\r\n" + //
 				"			<td>Status</td>\r\n" + //
-				"			<td>" + consensusServerL2.getState()//
+				"			<td>" + (appConfig.clusterL2().isEmpty() ? "" : consensusServerL2.getState())//
 				+ "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"	</table>"//

@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +24,10 @@ public class TaskReplicate implements Task {
 	private ConsensusServer server;
 	private Resource resource;
 	private Map<NodeAddress, State> states = new HashMap<>();
+	private final Lock lockConsensus = new ReentrantLock();
+	private final Condition complete = lockConsensus.newCondition();
+	private int minTickets;
+	private AtomicInteger vote = new AtomicInteger(0);
 
 	public TaskReplicate(ConsensusServer server, Resource resource) {
 		this.server = server;
@@ -34,6 +42,11 @@ public class TaskReplicate implements Task {
 		this.resource = resource;
 	}
 
+	public TaskReplicate buildConsensus(int minTickets) {
+		this.minTickets = minTickets;
+		return this;
+	}
+
 	private class Replicate implements Runnable {
 
 		private NodeAddress addr;
@@ -45,7 +58,16 @@ public class TaskReplicate implements Task {
 		@Override
 		public void run() {
 			server.replicate(addr, resource);
+			vote.incrementAndGet();
 			counter.countDown();
+			if (vote.get() >= minTickets || counter.getCount() == 0) {
+				lockConsensus.lock();
+				try {
+					complete.signal();
+				} finally {
+					lockConsensus.unlock();
+				}
+			}
 		}
 	}
 
@@ -60,11 +82,13 @@ public class TaskReplicate implements Task {
 		if (!server.strongConsist()) {
 			return;
 		}
+		lockConsensus.lock();
 		try {
-			// TODO more than half is fine
-			counter.await(10, TimeUnit.SECONDS);
+			complete.await(10, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			logger.error(e.getMessage(), e);
+		} finally {
+			lockConsensus.unlock();
 		}
 	}
 

@@ -51,6 +51,9 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 
 	@Override
 	public void startUp() {
+		if (getCluster().isEmpty()) {
+			return;
+		}
 		ping();
 		new Thread(new CandidateCleanup(), "CandidateCleanup").start();
 		new Thread(new CheckAndElection(), "CheckAndElection").start();
@@ -81,17 +84,14 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				NodeAddress addr = entry.getKey();
 				notifyRemote(addr, state);
 			}
-			if (noState(State.LEADER)) {
-				transition(State.CANDIDATE);
-			}
 			break;
 		case CANDIDATE:
-			this.state = state;
 			try {
 				Thread.sleep(500 + new Random().nextInt(5000));
 			} catch (InterruptedException e) {
 				logger.error(e.getMessage(), e);
 			}
+			this.state = state;
 			ping();
 			int min = ticketsToWin();
 			// TODO base on the latest log
@@ -105,7 +105,9 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 			break;
 		case LEADER:
 			this.state = state;
-			// TODO become the leader of l2. 1)change dns 2)get repli info from l1 leader.
+			// TODO become the leader of l2.
+			// 1)change dns
+			// 2)get repli info from l1 leader. become the follower of l1.
 			new TaskNotifyRemote(this, states, state).execute();
 			break;
 		default:
@@ -122,7 +124,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				n++;
 			}
 		}
-		return n;
+		return Math.max(n, 1);
 	}
 
 	private boolean noState(State state) {
