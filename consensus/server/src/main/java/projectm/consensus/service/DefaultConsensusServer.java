@@ -342,7 +342,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
 				}
 				// notify followers
-				replicate(resource);
+				new TaskReplicate(this, resource).buildConsensus(ticketsToWin()).execute();
+				new TaskReplicate(this.consensusServerL2, resource).execute();
 			} else {
 				if (!memoryResources.containsKey(key)) {
 					resource = new Resource(key, value);
@@ -354,7 +355,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 					resource.getId().incrementAndGet();
 					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
 				}
-				//TODO replicate to 2nd follower if it is l1 follower but l2 leader
+				new TaskReplicate(this.consensusServerL2, resource).execute();
 			}
 
 			return resource;
@@ -380,20 +381,17 @@ public class DefaultConsensusServer implements ConsensusServer {
 			memoryResources.remove(key); // TODO incr global seq for followers for re-election comparing.
 			resource.setDeleted(true);
 			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " deleted resource: " + key);
+			// notify followers
 			if (getState() == State.LEADER) {
-				// notify followers
-				replicate(resource);
+				new TaskReplicate(this, resource).buildConsensus(ticketsToWin()).execute();
+				new TaskReplicate(this.consensusServerL2, resource).execute();
+			} else {
+				new TaskReplicate(this.consensusServerL2, resource).execute();
 			}
-			//TODO replicate to 2nd follower if it is l1 follower but l2 leader
 			return resource;
 		} finally {
 			lockResource.unlock();
 		}
-	}
-
-	private void replicate(Resource resource) {
-		new TaskReplicate(this, resource).execute();
-		new TaskReplicate(this.consensusServerL2, resource).execute();
 	}
 
 	@Override

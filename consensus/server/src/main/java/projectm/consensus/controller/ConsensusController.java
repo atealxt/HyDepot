@@ -90,6 +90,7 @@ public class ConsensusController {
 		if (leader && consensusServer.getState() != State.LEADER) {
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			String msg = "This is not leader, you need to resend the request to " + consensusServer.getLeaderAddress();
+			logger.warn(msg);
 			response.getOutputStream().write(msg.getBytes());
 			return null;
 		}
