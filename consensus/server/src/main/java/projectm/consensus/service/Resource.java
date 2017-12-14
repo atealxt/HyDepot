@@ -24,6 +24,13 @@ public class Resource {
 		this.value = value;
 	}
 
+	public Resource(Resource resource) {
+		super();
+		this.key = resource.key;
+		this.value = resource.value;
+		this.deleted = resource.deleted;
+	}
+
 	public AtomicLong getId() {
 		return id;
 	}
@@ -54,6 +61,6 @@ public class Resource {
 
 	@Override
 	public String toString() {
-		return "Resource [id=" + id + ", key=" + key + ", value=" + value + "]";
+		return "Resource [id=" + id + ", key=" + key + ", value=" + value + ", deleted=" + deleted + "]";
 	}
 }

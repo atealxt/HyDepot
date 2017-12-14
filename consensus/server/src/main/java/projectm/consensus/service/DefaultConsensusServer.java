@@ -379,11 +379,13 @@ public class DefaultConsensusServer implements ConsensusServer {
 				}
 			}
 			memoryResources.remove(key); // TODO incr global seq for followers for re-election comparing.
-			resource.setDeleted(true);
 			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " deleted resource: " + key);
 			// notify followers
+			resource = new Resource(resource);
+			resource.setDeleted(true);
 			if (getState() == State.LEADER) {
 				new TaskReplicate(this, resource).buildConsensus(ticketsToWin()).execute();
+				// FIXME l1 leader by l2 follower (same at addResource)
 				new TaskReplicate(this.consensusServerL2, resource).execute();
 			} else {
 				new TaskReplicate(this.consensusServerL2, resource).execute();
@@ -444,7 +446,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 	}
 
 	@Override
-	public Map<NodeAddress, State> geStates() {
+	public Map<NodeAddress, State> getStates() {
 		return states;
 	}
 }

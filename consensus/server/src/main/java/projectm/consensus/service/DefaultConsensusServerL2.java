@@ -378,8 +378,9 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				}
 			}
 			memoryResources.remove(key); // TODO incr global seq for followers for re-election comparing.
-			resource.setDeleted(true);
 			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " deleted resource: " + key);
+			resource = new Resource(resource);
+			resource.setDeleted(true);
 			if (getState() == State.LEADER) {
 				// notify followers
 				replicate(resource);
@@ -444,7 +445,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 	}
 
 	@Override
-	public Map<NodeAddress, State> geStates() {
+	public Map<NodeAddress, State> getStates() {
 		return states;
 	}
 }

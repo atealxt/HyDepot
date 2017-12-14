@@ -36,5 +36,5 @@ public interface ConsensusServer {
 
 	boolean strongConsist();
 
-	Map<NodeAddress, State> geStates();
+	Map<NodeAddress, State> getStates();
 }
