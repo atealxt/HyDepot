@@ -134,6 +134,21 @@ public class DefaultConsensusServer implements ConsensusServer {
 		for (Entry<NodeAddress, State> entry : states.entrySet()) {
 			if (entry.getValue() == state) {
 				hasState = true;
+				break;
+			}
+		}
+		return !hasState;
+	}
+
+	private boolean noState(State state, NodeAddress addr) {
+		if (this.state == state) {
+			return false;
+		}
+		boolean hasState = false;
+		for (Entry<NodeAddress, State> entry : states.entrySet()) {
+			if (entry.getValue() == state && !entry.getKey().equals(addr)) {
+				hasState = true;
+				break;
 			}
 		}
 		return !hasState;
@@ -163,6 +178,7 @@ public class DefaultConsensusServer implements ConsensusServer {
 			NotifyResult result = mapper.readValue(body, NotifyResult.class);
 			if (!result.isAccept()) {
 				logger.warn(addr + " not accept my state: " + state);
+				states.put(addr, result.getState());
 			} else {
 				states.put(addr, result.getState());
 			}
@@ -214,7 +230,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 				candidateTenancy.remove(nodeAddress);
 				break;
 			case CANDIDATE:
-				if (!noState(State.LEADER) || !noState(State.CANDIDATE)) {
+				ping();
+				if (!noState(State.LEADER) || !noState(State.CANDIDATE, nodeAddress)) {
 					return new NotifyResult(false, getState());
 				}
 				entry.setValue(state);
@@ -343,7 +360,6 @@ public class DefaultConsensusServer implements ConsensusServer {
 				}
 				// notify followers
 				new TaskReplicate(this, resource).buildConsensus(ticketsToWin()).execute();
-				new TaskReplicate(this.consensusServerL2, resource).execute();
 			} else {
 				if (!memoryResources.containsKey(key)) {
 					resource = new Resource(key, value);
@@ -355,8 +371,8 @@ public class DefaultConsensusServer implements ConsensusServer {
 					resource.getId().incrementAndGet();
 					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
 				}
-				new TaskReplicate(this.consensusServerL2, resource).execute();
 			}
+			replicateToL2(resource);
 
 			return resource;
 		} finally {
@@ -385,14 +401,25 @@ public class DefaultConsensusServer implements ConsensusServer {
 			resource.setDeleted(true);
 			if (getState() == State.LEADER) {
 				new TaskReplicate(this, resource).buildConsensus(ticketsToWin()).execute();
-				// FIXME l1 leader by l2 follower (same at addResource)
-				new TaskReplicate(this.consensusServerL2, resource).execute();
-			} else {
-				new TaskReplicate(this.consensusServerL2, resource).execute();
 			}
+			replicateToL2(resource);
 			return resource;
 		} finally {
 			lockResource.unlock();
+		}
+	}
+
+	private void replicateToL2(Resource resource) {
+		switch (consensusServerL2.getState()) {
+		case LEADER:
+			new TaskReplicate(consensusServerL2, resource).execute();
+			break;
+		case FOLLOWER:
+			NodeAddress leader = consensusServerL2.getLeaderAddress();
+			consensusServerL2.replicate(leader, resource);
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -412,6 +439,9 @@ public class DefaultConsensusServer implements ConsensusServer {
 		parameters.add(new BasicNameValuePair("key", resource.getKey()));
 		parameters.add(new BasicNameValuePair("value", resource.getValue()));
 		parameters.add(new BasicNameValuePair("delete", String.valueOf(resource.isDeleted())));
+		if (resource.isDeleted()) {
+			parameters.add(new BasicNameValuePair("id", String.valueOf(resource.getId().get())));
+		}
 		parameters.add(new BasicNameValuePair("leader", "false"));
 		try {
 			httpPost.setEntity(new UrlEncodedFormEntity(parameters));

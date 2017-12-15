@@ -104,13 +104,11 @@ public class TaskReplicate implements Task {
 
 		@Override
 		public void run() {
-
 			try {
 				server.replicate(addr, resource);
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
-
 			vote.incrementAndGet();
 			counter.countDown();
 			if (vote.get() >= minTickets || counter.getCount() == 0) {
@@ -122,7 +120,6 @@ public class TaskReplicate implements Task {
 				}
 			}
 			if (counter.getCount() == 0) {
-//				logger.info(server.getClass().getSimpleName() + " complete replicate resource " + resource);
 				runnablePool.get(new ReplicateIdentity(resource.getKey(), server)).offer(1);
 			}
 		}
@@ -139,13 +136,11 @@ public class TaskReplicate implements Task {
 			if (runnablePool.containsKey(identity)) {
 				// which means same resource are running and not complete yet.
 				try {
-//					logger.info(this.server.getClass().getSimpleName() + " is waiting for ticket to replicate " + resource);
 					runnablePool.get(identity).take();
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
 				}
 			} else {
-//				logger.info(this.server.getClass().getSimpleName() + " first meet resource " + resource.getKey());
 				runnablePool.put(identity, new ArrayBlockingQueue<>(1, true));
 			}
 		} finally {

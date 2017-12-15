@@ -140,6 +140,20 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 		return !hasState;
 	}
 
+	private boolean noState(State state, NodeAddress addr) {
+		if (this.state == state) {
+			return false;
+		}
+		boolean hasState = false;
+		for (Entry<NodeAddress, State> entry : states.entrySet()) {
+			if (entry.getValue() == state && !entry.getKey().equals(addr)) {
+				hasState = true;
+				break;
+			}
+		}
+		return !hasState;
+	}
+
 	@Override
 	public NotifyResult notifyRemote(NodeAddress addr, State state) {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -164,6 +178,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 			NotifyResult result = mapper.readValue(body, NotifyResult.class);
 			if (!result.isAccept()) {
 				logger.warn(addr + " not accept my state: " + state);
+				states.put(addr, result.getState());
 			} else {
 				states.put(addr, result.getState());
 			}
@@ -215,7 +230,8 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				candidateTenancy.remove(nodeAddress);
 				break;
 			case CANDIDATE:
-				if (!noState(State.LEADER) || !noState(State.CANDIDATE)) {
+				ping();
+				if (!noState(State.LEADER) || !noState(State.CANDIDATE, nodeAddress)) {
 					return new NotifyResult(false, getState());
 				}
 				entry.setValue(state);
@@ -411,6 +427,9 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 		parameters.add(new BasicNameValuePair("key", resource.getKey()));
 		parameters.add(new BasicNameValuePair("value", resource.getValue()));
 		parameters.add(new BasicNameValuePair("delete", String.valueOf(resource.isDeleted())));
+		if (resource.isDeleted()) {
+			parameters.add(new BasicNameValuePair("id", String.valueOf(resource.getId().get())));
+		}
 		parameters.add(new BasicNameValuePair("leader", "false"));
 		try {
 			httpPost.setEntity(new UrlEncodedFormEntity(parameters));
