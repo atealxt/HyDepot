@@ -161,7 +161,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 		try {
 			uri = new URIBuilder().setScheme("http").setHost(addr.getIp())//
 					.setPort(addr.getPort()).setPath("/api/consensusL2/notify")//
-					.setParameter("ip", appConfig.getIp())//
+					.setParameter("ip", appConfig.getIpLocal())//
 					.setParameter("port", String.valueOf(appConfig.getPort()))//
 					.setParameter("state", state.getVal())//
 					.build();
@@ -263,7 +263,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 		}
 		if (state == State.LEADER) {
 			logger.warn("I'm already the leader!");
-			return new NodeAddress(appConfig.getIp(), appConfig.getPort());
+			return new NodeAddress(appConfig.getIpLocal(), appConfig.getPort());
 		}
 		throw new ConsensusException("No leader in cluster yet.");
 	}
@@ -344,7 +344,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 					}
 					resource = new Resource(key, value);
 					memoryResources.put(key, resource);
-					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " created " + resource);
+					logger.info(appConfig.getIpLocal() + ":" + appConfig.getPort() + " created " + resource);
 				} else {
 					if (!memoryResources.containsKey(key)) {
 						throw new ConsensusException("Invalid state.");
@@ -356,7 +356,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 					}
 					resource.setValue(value);
 					resource.getId().incrementAndGet();
-					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
+					logger.info(appConfig.getIpLocal() + ":" + appConfig.getPort() + " updated " + resource);
 				}
 				// notify followers
 				replicate(resource);
@@ -364,12 +364,12 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				if (!memoryResources.containsKey(key)) {
 					resource = new Resource(key, value);
 					memoryResources.put(key, resource);
-					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " created " + resource);
+					logger.info(appConfig.getIpLocal() + ":" + appConfig.getPort() + " created " + resource);
 				} else {
 					resource = memoryResources.get(key);
 					resource.setValue(value);
 					resource.getId().incrementAndGet();
-					logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " updated " + resource);
+					logger.info(appConfig.getIpLocal() + ":" + appConfig.getPort() + " updated " + resource);
 				}
 			}
 
@@ -394,7 +394,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				}
 			}
 			memoryResources.remove(key); // TODO incr global seq for followers for re-election comparing.
-			logger.info(appConfig.getIp() + ":" + appConfig.getPort() + " deleted resource: " + key);
+			logger.info(appConfig.getIpLocal() + ":" + appConfig.getPort() + " deleted resource: " + key);
 			resource = new Resource(resource);
 			resource.setDeleted(true);
 			if (getState() == State.LEADER) {

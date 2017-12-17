@@ -45,6 +45,8 @@ public class ApplicationConfig {
 
 	@Value("${projectm.server.ip}")
 	private String ip;
+	@Value("${projectm.server.ip.local}")
+	private String ipLocal;
 	@Value("${server.port}")
 	private int port;
 	@Value("${projectm.consensus.nodes}")
@@ -79,7 +81,7 @@ public class ApplicationConfig {
 		}
 		for (String node : nodesL2.split(",")) {
 			String[] s = node.split(":");
-			if (ip.equals(s[0]) && port == Integer.parseInt(s[1])) {
+			if (ipLocal.equals(s[0]) && port == Integer.parseInt(s[1])) {
 				continue;
 			}
 			NodeAddress addr = new NodeAddress(s[0], Integer.parseInt(s[1]));
@@ -90,6 +92,10 @@ public class ApplicationConfig {
 
 	public String getIp() {
 		return ip;
+	}
+
+	public String getIpLocal() {
+		return ipLocal;
 	}
 
 	public int getPort() {
