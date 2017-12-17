@@ -41,6 +41,11 @@ public class HomeController {
 				+ "</td>\r\n" + //
 				"		</tr>\r\n" + //
 				"		<tr>\r\n" + //
+				"			<td>Local IP</td>\r\n" + //
+				"			<td>" + appConfig.getIpLocal()//
+				+ "</td>\r\n" + //
+				"		</tr>\r\n" + //
+				"		<tr>\r\n" + //
 				"			<td>Port</td>\r\n" + //
 				"			<td>" + appConfig.getPort()//
 				+ "</td>\r\n" + //
