@@ -7,6 +7,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -33,6 +35,11 @@ public class TaskReplicate implements Task {
 	private AtomicInteger vote = new AtomicInteger(0);
 	private static Map<ReplicateIdentity, BlockingQueue<Object>> runnablePool = new ConcurrentHashMap<>();
 	private static final Lock lockRunnable = new ReentrantLock();
+
+	private static ExecutorService executorServiceL1 = new ThreadPoolExecutor(10, 20, 10, TimeUnit.SECONDS,
+			new ArrayBlockingQueue<>(1000));
+	private static ExecutorService executorServiceL2 = new ThreadPoolExecutor(10, 20, 10, TimeUnit.SECONDS,
+			new ArrayBlockingQueue<>(1000));
 
 	public TaskReplicate(ConsensusServer server, Resource resource) {
 		this.server = server;
@@ -150,7 +157,11 @@ public class TaskReplicate implements Task {
 			if (entry.getValue() != State.FOLLOWER) {
 				continue;
 			}
-			new Thread(new Replicate(entry.getKey())).start();
+			if (server.strongConsist()) {
+				executorServiceL1.execute(new Replicate(entry.getKey()));
+			} else {
+				executorServiceL2.execute(new Replicate(entry.getKey()));
+			}
 		}
 		if (!server.strongConsist()) {
 			return;
