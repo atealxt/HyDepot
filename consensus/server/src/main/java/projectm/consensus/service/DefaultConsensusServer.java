@@ -140,13 +140,25 @@ public class DefaultConsensusServer implements ConsensusServer {
 		return !hasState;
 	}
 
-	private boolean noState(State state, NodeAddress addr) {
+	private boolean multiState(State state) {
+		if (this.state != state) {
+			return false;
+		}
+		for (Entry<NodeAddress, State> entry : states.entrySet()) {
+			if (entry.getValue() == state) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean noState(State state, NodeAddress excludedAddr) {
 		if (this.state == state) {
 			return false;
 		}
 		boolean hasState = false;
 		for (Entry<NodeAddress, State> entry : states.entrySet()) {
-			if (entry.getValue() == state && !entry.getKey().equals(addr)) {
+			if (entry.getValue() == state && !entry.getKey().equals(excludedAddr)) {
 				hasState = true;
 				break;
 			}
@@ -308,6 +320,10 @@ public class DefaultConsensusServer implements ConsensusServer {
 					if (noState(State.LEADER)) {
 						logger.info("No Leader, start new election...");
 						transition(State.CANDIDATE);
+					} else if (multiState(State.LEADER)) {
+						// patch for if more than one leader
+						logger.info("Detected multi leader, give it up...");
+						transition(State.FOLLOWER);
 					}
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
