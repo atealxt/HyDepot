@@ -124,7 +124,7 @@ public class DefaultConsensusServerL2 implements ConsensusServer {
 				n++;
 			}
 		}
-		return Math.max(n, 1);
+		return Math.max((int) Math.ceil(n / 2.0), 1);
 	}
 
 	private boolean noState(State state) {
