@@ -20,7 +20,7 @@ ORDER BY COUNT(tt.doc_id) DESC
 LIMIT 10
 
 -- get visit detail by date for specific doc
-SELECT t.log_date, COUNT(*)
+SELECT t.log_date as 'Date', COUNT(*) as 'R/W Count'
 FROM LOG t
 WHERE t.doc_id = '{doc_id_here}'
 GROUP BY t.log_date
