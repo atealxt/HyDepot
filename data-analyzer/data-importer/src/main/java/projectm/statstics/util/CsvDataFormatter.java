@@ -48,4 +48,25 @@ public final class CsvDataFormatter {
 			cal1.add(Calendar.DATE, 1);
 		}
 	}
+
+	public void normalization(String filePath) throws IOException, ParseException {
+		String file = new String(Files.readAllBytes(Paths.get(filePath)));
+		List<String> list = Arrays.asList(file.split("\r\n"));
+		String firstDate = list.get(1).split(",")[0];
+		firstDate = firstDate.substring(1, firstDate.length() - 1);
+		System.out.println("\"Day\",\"R/W Count\"");
+		int x = 1;
+		for (int i = 0; i < list.size(); i++) {
+			String str = list.get(i);
+			if (i == 0 || str.trim().isEmpty()) {
+				continue;
+			}
+			String date = str.split(",")[0];
+			date = date.substring(1, date.length() - 1);
+			System.out.println("\"" + (x++) + "\"," + str.split(",")[1]);
+		}
+		for (int j = x; j <= 90; j++) {
+			System.out.println("\"" + j + "\",\"0\"");
+		}
+	}
 }
