@@ -21,7 +21,7 @@ from price import *
 #     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
 #     series.plot()
 
-series = read_csv('o_4.csv', index_col=0)
+series = read_csv('o_1.csv', index_col=0)
 # series.plot()
 # pyplot.show()
 
