@@ -36,7 +36,8 @@ def price1(X):
     storagePrice1 = STORAGE_PRICE_UNIT_CLASS1 * (sizeInMB / 1024.0) * ((existDaysInClass1) / 30.0);
     rwCount = 0
     for t in range(0, len(X)):
-        rwCount += X[t]
+        if X[t] >= 0:
+            rwCount += X[t]
     operationPrice1 = OPERATION_PRICE_READ_UNIT_CLASS1 * rwCount
     price1 = storagePrice1 + operationPrice1;
     return price1    
@@ -47,7 +48,8 @@ def price2(X):
                                                     ) * (max(existDaysInClass2, 30) / 30.0)
     rwCount = 0
     for t in range(0, len(X)):
-        rwCount += X[t]
+        if X[t] >= 0:
+            rwCount += X[t]
     operationPrice2 = OPERATION_PRICE_UNIT_CLASS2 * rwCount;
     price2 = storagePrice2 + operationPrice2 + PRICE_CHANGE_CLASS;
     return price2
