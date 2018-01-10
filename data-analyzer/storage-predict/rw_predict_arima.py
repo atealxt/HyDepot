@@ -88,7 +88,6 @@ for predictStartDays in range(8, 30):
 
     train = X[0:predictStartDays]
     history = [x for x in train]
-    rwCountPredicted = 0;
     
     p_values = range(0, 2)
     d_values = range(0, 2)
@@ -110,7 +109,6 @@ for predictStartDays in range(8, 30):
 
         train = X[0:predictStartDays]
         history = [x for x in train]
-        rwCountPredicted = 0;
         bias = None
         predictions = list()
 
