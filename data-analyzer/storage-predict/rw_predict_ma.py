@@ -3,6 +3,7 @@ from pandas import datetime
 from matplotlib import pyplot
 from pandas import DataFrame
 from pandas import concat
+from numpy import mean
 from sklearn.metrics import mean_squared_error
 from pandas import Series
 from pandas.plotting import lag_plot
@@ -16,10 +17,6 @@ from math import ceil
 import warnings
 import traceback
 import numpy
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn import datasets, linear_model
-from sklearn.metrics import mean_squared_error, r2_score
 from price import *
 
 warnings.filterwarnings("ignore")
@@ -28,7 +25,7 @@ warnings.filterwarnings("ignore")
 #     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
 #     series.plot()
 
-series = read_csv('o_10.csv', index_col=0)
+series = read_csv('o_4.csv', index_col=0)
 # series.plot()
 # pyplot.show()
 
@@ -54,40 +51,44 @@ print("Best move day: " + str(bestDayObs) + ", saving " + format(bestSavingObs))
 
 for predictStartDays in range(8, 30):
 
+    train = X[0:predictStartDays]
+    history = [x for x in train]
+    
     predictMove = False
     
     for predictDays in range(7, 30): 
     
+        print("predict " + str(predictDays) + " days from day " + str(predictStartDays))
+
         if predictMove:
             # already decide to move, no need to predict more days
             break
 
-        train = X[0:predictStartDays]
-        history = [x[0] for x in train]
-        
         # step1
         # predict rw count for future days
 
-        days = numpy.zeros(shape=(predictStartDays + predictDays, 1))
-        for t in range(0, len(days)):
-            days[t] = [t + 1]
+        train = X[0:predictStartDays]
+        history = [x for x in train]
+        predictions = list()
         
-        # Split the data into training/testing sets
-        X_train = days[:-predictDays]
-        X_test = days[-predictDays:]
-        
-        # Split the targets into training/testing sets
-        y_train = history
-        
-        # Create linear regression object
-        regr = linear_model.LinearRegression()
-        
-        # Train the model using the training sets
-        regr.fit(X_train, y_train)
-        
-        # Make predictions using the testing set
-        predictions = regr.predict(X_test).tolist()
+        window = 6
 
+        predErr = False
+
+        for t in range(predictDays):    
+            try:
+                length = len(history)
+                yhat = mean([history[i] for i in range(length - window,length)])                    
+                predictions.append(ceil(yhat))
+                history.append(yhat)
+            except:
+                raise
+                predErr = True
+                break
+        
+        if predErr:
+            continue
+        
         # step2
         # calc the best date to move, if it is today, move! (then go to step3)
         history = [x[0] for x in train]
@@ -121,3 +122,5 @@ for predictStartDays in range(8, 30):
             diff = price1Obs - pp
             
             print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
+#             print("predict " + str(predictDays) + " days from day " + str(predictStartDays))
+#             print("move at day: " + str(len(history)) + ", saving " + format(bestSaving))
