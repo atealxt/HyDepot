@@ -17,4 +17,9 @@ print('sklearn: %s' % sklearn.__version__)
 # statsmodels
 import statsmodels
 print('statsmodels: %s' % statsmodels.__version__)
-
+# theano
+import theano
+print('theano: %s' % theano.__version__)
+# keras
+import keras
+print('keras: %s' % keras.__version__)

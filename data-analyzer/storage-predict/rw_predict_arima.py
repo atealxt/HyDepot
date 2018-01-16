@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 #     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
 #     series.plot()
 
-series = read_csv('o_4.csv', index_col=0)
+series = read_csv('o_8.csv', index_col=0)
 # series.plot()
 # pyplot.show()
 
@@ -89,7 +89,7 @@ for predictStartDays in range(8, 30):
     train = X[0:predictStartDays]
     history = [x for x in train]
     
-    p_values = range(0, 3)
+    p_values = range(0, 5)
     d_values = range(0, 2)
     q_values = range(0, 3)
     best_cfg = evaluate_models(history, p_values, d_values, q_values)
