@@ -1,6 +1,7 @@
 package projectm;
 
 import java.io.IOException;
+import java.text.ParseException;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,5 +20,10 @@ public class DataImporterTest {
 	@Test
 	public void testImportDataFromCsvToDB() throws IOException {
 		importer.importDataFromCsvToDB();
+	}
+
+	@Test
+	public void testGenerateTimeSeriesData() throws IOException, ParseException {
+		importer.generateTimeSeriesData(1000);
 	}
 }
