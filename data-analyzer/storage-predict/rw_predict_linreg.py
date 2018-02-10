@@ -24,100 +24,109 @@ from price import *
 
 warnings.filterwarnings("ignore")
 
-# for i in range(1, 10):
-#     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
-#     series.plot()
+def predict(X, progress=True, stopIfFound=False):
 
-series = read_csv('o_5.csv', index_col=0)
-# series.plot()
-# pyplot.show()
-
-X = series.values
-X = X.astype('float32')
-
-# real saving in God model:
-obs = [x[0] for x in X]
-price1Obs = price1(obs)
-bestDayObs = None
-bestSavingObs = 0
-for t in range(0, len(obs) - 1):
-    # price before move
-    p1 = price1(obs[0:t + 1])
-    # price after move
-    p2 = price2(obs[t + 1:])
-    pp = p1 + p2
-    diff = price1Obs - pp
-    if diff > bestSavingObs:
-        bestSavingObs = diff
-        bestDayObs = t + 1
-print("Best move day: " + str(bestDayObs) + ", saving " + format(bestSavingObs))
-
-for predictStartDays in range(8, 30):
-
-    predictMove = False
+    # real saving in God model:
+    obs = [x[0] for x in X]
+    price1Obs = price1(obs)
+    bestDayObs = None
+    bestSavingObs = 0
+    for t in range(0, len(obs) - 1):
+        # price before move
+        p1 = price1(obs[0:t + 1])
+        # price after move
+        p2 = price2(obs[t + 1:])
+        pp = p1 + p2
+        diff = price1Obs - pp
+        if diff > bestSavingObs:
+            bestSavingObs = diff
+            bestDayObs = t + 1
+    print("Best move day: " + str(bestDayObs) + ", saving " + format(bestSavingObs))
     
-    for predictDays in range(7, 30): 
+    for predictStartDays in range(8, 30):
     
-        if predictMove:
-            # already decide to move, no need to predict more days
-            break
-
-        train = X[0:predictStartDays]
-        history = [x[0] for x in train]
+        predictMove = False
         
-        # step1
-        # predict rw count for future days
-
-        days = numpy.zeros(shape=(predictStartDays + predictDays, 1))
-        for t in range(0, len(days)):
-            days[t] = [t + 1]
+        for predictDays in range(7, 30): 
         
-        # Split the data into training/testing sets
-        X_train = days[:-predictDays]
-        X_test = days[-predictDays:]
-        
-        # Split the targets into training/testing sets
-        y_train = history
-        
-        # Create linear regression object
-        regr = linear_model.LinearRegression()
-        
-        # Train the model using the training sets
-        regr.fit(X_train, y_train)
-        
-        # Make predictions using the testing set
-        predictions = regr.predict(X_test).tolist()
-
-        # step2
-        # calc the best date to move, if it is today, move! (then go to step3)
-        history = [x[0] for x in train]
-        Y = history + predictions
-        p = price1(Y)
-        bestSaving = -1
-        for t in range(len(history), len(Y)):
-            # price before move
-            p1 = price1(Y[0:t + 1])
-            # price after move
-            p2 = price2(Y[t + 1:])
-            pp = p1 + p2
-            diff = p - pp
-            if diff > 0.000005:
-                if bestSaving < diff:
-                    if t > len(history):
-                        # not today, so won't move.
-                        break
-                    bestSaving = diff
-
-        # step3
-        # compare with the real best date
-        if bestSaving != -1:
-            predictMove = True
+            if predictMove:
+                # already decide to move, no need to predict more days
+                break
+    
+            train = X[0:predictStartDays]
+            history = [x[0] for x in train]
             
-            # price before move
-            p1 = price1(obs[0:len(history)])
-            # price after move
-            p2 = price2(obs[len(history):])
-            pp = p1 + p2
-            diff = price1Obs - pp
+            # step1
+            # predict rw count for future days
+    
+            days = numpy.zeros(shape=(predictStartDays + predictDays, 1))
+            for t in range(0, len(days)):
+                days[t] = [t + 1]
             
-            print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
+            # Split the data into training/testing sets
+            X_train = days[:-predictDays]
+            X_test = days[-predictDays:]
+            
+            # Split the targets into training/testing sets
+            y_train = history
+            
+            # Create linear regression object
+            regr = linear_model.LinearRegression()
+            
+            # Train the model using the training sets
+            regr.fit(X_train, y_train)
+            
+            # Make predictions using the testing set
+            predictions = regr.predict(X_test).tolist()
+    
+            # step2
+            # calc the best date to move, if it is today, move! (then go to step3)
+            history = [x[0] for x in train]
+            Y = history + predictions
+            p = price1(Y)
+            bestSaving = -1
+            for t in range(len(history), len(Y)):
+                # price before move
+                p1 = price1(Y[0:t + 1])
+                # price after move
+                p2 = price2(Y[t + 1:])
+                pp = p1 + p2
+                diff = p - pp
+                if diff > 0.000005:
+                    if bestSaving < diff:
+                        if t > len(history):
+                            # not today, so won't move.
+                            break
+                        bestSaving = diff
+    
+            # step3
+            # compare with the real best date
+            if bestSaving != -1:
+                predictMove = True
+                
+                # price before move
+                p1 = price1(obs[0:len(history)])
+                # price after move
+                p2 = price2(obs[len(history):])
+                pp = p1 + p2
+                diff = price1Obs - pp
+                
+                print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
+                
+                if stopIfFound:
+                    return
+
+if __name__ == "__main__":
+
+    # for i in range(1, 10):
+    #     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
+    #     series.plot()
+    
+    series = read_csv('o_cluster_3.csv', index_col=0)
+    # series.plot()
+    # pyplot.show()
+    
+    X = series.values
+    X = X.astype('float32')
+
+    predict(X)
