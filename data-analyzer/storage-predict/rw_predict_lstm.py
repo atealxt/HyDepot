@@ -37,35 +37,6 @@ from price import *
 
 warnings.filterwarnings("ignore")
 
-# for i in range(1, 10):
-#     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
-#     series.plot()
-
-series = read_csv('o_5.csv', index_col=0)
-# series.plot()
-# pyplot.show()
-
-X = series.values
-X = X.astype('float32')
-
-# real saving in God model:
-obs = [x[0] for x in X]
-price1Obs = price1(obs)
-bestDayObs = None
-bestSavingObs = 0
-for t in range(0, len(obs) - 1):
-    # price before move
-    p1 = price1(obs[0:t + 1])
-    # price after move
-    p2 = price2(obs[t + 1:])
-    pp = p1 + p2
-    diff = price1Obs - pp
-    if diff > bestSavingObs:
-        bestSavingObs = diff
-        bestDayObs = t + 1
-print("Best move day: " + str(bestDayObs) + ", saving " + format(bestSavingObs))
-
-
 # frame a sequence as a supervised learning problem
 def timeseries_to_supervised(data, lag=1):
     df = DataFrame(data)
@@ -124,102 +95,139 @@ def forecast_lstm(model, batch_size, X):
     yhat = model.predict(X, batch_size=batch_size)
     return yhat[0,0]
 
-# transform data to be stationary
-raw_values = series.values
-diff_values = difference(raw_values, 1)
+def predict(X, progress=True, stopIfFound=False):
 
-# transform data to be supervised learning
-supervised = timeseries_to_supervised(diff_values, 1)
-supervised_values = supervised.values
+    # real saving in God model:
+    obs = [x[0] for x in X]
+    price1Obs = price1(obs)
+    bestDayObs = None
+    bestSavingObs = 0
+    for t in range(0, len(obs) - 1):
+        # price before move
+        p1 = price1(obs[0:t + 1])
+        # price after move
+        p2 = price2(obs[t + 1:])
+        pp = p1 + p2
+        diff = price1Obs - pp
+        if diff > bestSavingObs:
+            bestSavingObs = diff
+            bestDayObs = t + 1
+    print("Best move day: " + str(bestDayObs) + ", saving " + format(bestSavingObs))
 
-for predictStartDays in range(8, 30):
-
-    predictMove = False
-    raw_values_predict = raw_values[0:predictStartDays]
+    # transform data to be stationary
+    raw_values = series.values
+    diff_values = difference(raw_values, 1)
     
-    for predictDays in range(7, 30): 
+    # transform data to be supervised learning
+    supervised = timeseries_to_supervised(diff_values, 1)
+    supervised_values = supervised.values
     
-        print("predict " + str(predictDays) + " days from day " + str(predictStartDays))
+    for predictStartDays in range(8, 30):
     
-        if predictMove:
-            # already decide to move, no need to predict more days
-            break
-
-        # step1
-        # predict rw count for future days
-
-        # split data into train and test-sets
-        train = supervised_values[0:predictStartDays]
-        train_raw_values = raw_values[0:predictStartDays]
+        predictMove = False
+        raw_values_predict = raw_values[0:predictStartDays]
         
-        # transform the scale of the data
-        scaler, train_scaled = scale(train)
+        for predictDays in range(7, 30): 
         
-        # fit the model
-        lstm_model = fit_lstm(train_scaled, 1, 1500, 1)
-        # forecast the entire training dataset to build up state for forecasting
-        train_reshaped = train_scaled[:, 0].reshape(len(train_scaled), 1, 1)
-        yhat = lstm_model.predict(train_reshaped, batch_size=1)
-        yhat = yhat[len(yhat) - 1]
-        # walk-forward validation on the test data
-        predictions = list()
-        for i in range(predictDays):
-            # make one-step forecast
-            X = yhat
-            X = X.reshape(1, 1, 1)
-            yhat = (lstm_model.predict(X, batch_size=1))[0,0]
-            
-            # invert scaling
-            predict = yhat
-            predict = invert_scale(scaler, X, predict)
-            # invert differencing
-            predict = predict + raw_values_predict[-1]
-            # store forecast
-            predictions.append(ceil(predict))
-#             raw_values_predict.append(predict)
-            raw_values_predict = np.append(raw_values_predict, predict)
-
-
+            if progress:
+                print("predict " + str(predictDays) + " days from day " + str(predictStartDays))
+        
+            if predictMove:
+                # already decide to move, no need to predict more days
+                break
     
-# TODO RMSE for all models.
-
-
-
-
-
-
-
-
-        # step2
-        # calc the best date to move, if it is today, move! (then go to step3)
-        history = [x[0] for x in train_raw_values]
-        Y = history + predictions
-        p = price1(Y)
-        bestSaving = -1
-        for t in range(len(history), len(Y)):
-            # price before move
-            p1 = price1(Y[0:t + 1])
-            # price after move
-            p2 = price2(Y[t + 1:])
-            pp = p1 + p2
-            diff = p - pp
-            if diff > 0.000005:
-                if bestSaving < diff:
-                    if t > len(history):
-                        # not today, so won't move.
-                        break
-                    bestSaving = diff
-
-        # step3
-        # compare with the real best date
-        if bestSaving != -1:
-            predictMove = True
+            # step1
+            # predict rw count for future days
+    
+            # split data into train and test-sets
+            train = supervised_values[0:predictStartDays]
+            train_raw_values = raw_values[0:predictStartDays]
             
-            # price before move
-            p1 = price1(obs[0:len(history)])
-            # price after move
-            p2 = price2(obs[len(history):])
-            pp = p1 + p2
-            diff = price1Obs - pp
+            # transform the scale of the data
+            scaler, train_scaled = scale(train)
             
-            print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
+            # fit the model
+            lstm_model = fit_lstm(train_scaled, 1, 1500, 1)
+            # forecast the entire training dataset to build up state for forecasting
+            train_reshaped = train_scaled[:, 0].reshape(len(train_scaled), 1, 1)
+            yhat = lstm_model.predict(train_reshaped, batch_size=1)
+            yhat = yhat[len(yhat) - 1]
+            # walk-forward validation on the test data
+            predictions = list()
+            for i in range(predictDays):
+                # make one-step forecast
+                X = yhat
+                X = X.reshape(1, 1, 1)
+                yhat = (lstm_model.predict(X, batch_size=1))[0,0]
+                
+                # invert scaling
+                predict = yhat
+                predict = invert_scale(scaler, X, predict)
+                # invert differencing
+                predict = predict + raw_values_predict[-1]
+                # store forecast
+                predictions.append(ceil(predict))
+    #             raw_values_predict.append(predict)
+                raw_values_predict = np.append(raw_values_predict, predict)
+    
+    
+        
+    # TODO RMSE for all models.
+    
+    
+    
+    
+    
+    
+    
+    
+            # step2
+            # calc the best date to move, if it is today, move! (then go to step3)
+            history = [x[0] for x in train_raw_values]
+            Y = history + predictions
+            p = price1(Y)
+            bestSaving = -1
+            for t in range(len(history), len(Y)):
+                # price before move
+                p1 = price1(Y[0:t + 1])
+                # price after move
+                p2 = price2(Y[t + 1:])
+                pp = p1 + p2
+                diff = p - pp
+                if diff > 0.000005:
+                    if bestSaving < diff:
+                        if t > len(history):
+                            # not today, so won't move.
+                            break
+                        bestSaving = diff
+    
+            # step3
+            # compare with the real best date
+            if bestSaving != -1:
+                predictMove = True
+                
+                # price before move
+                p1 = price1(obs[0:len(history)])
+                # price after move
+                p2 = price2(obs[len(history):])
+                pp = p1 + p2
+                diff = price1Obs - pp
+                
+                print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
+                if stopIfFound:
+                    return
+
+if __name__ == "__main__":
+
+    # for i in range(1, 10):
+    #     series = read_csv('o_' + str(i) + '.csv', header=0, parse_dates=[0], index_col=0, squeeze=True)
+    #     series.plot()
+    
+    series = read_csv('o_5.csv', index_col=0)
+    # series.plot()
+    # pyplot.show()
+    
+    X = series.values
+    X = X.astype('float32')
+
+    predict(X)
