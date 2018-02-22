@@ -24,7 +24,7 @@ from price import *
 
 warnings.filterwarnings("ignore")
 
-def predict(X, progress=True, stopIfFound=False):
+def predict(X, progress=True, stopIfFound=False, predictStartDays=range(8, 30), predictDays=range(7, 30)):
 
     # real saving in God model:
     obs = [x[0] for x in X]
@@ -43,29 +43,29 @@ def predict(X, progress=True, stopIfFound=False):
             bestDayObs = t + 1
     print("Best move day: " + str(bestDayObs) + ", saving " + format(bestSavingObs))
     
-    for predictStartDays in range(8, 30):
+    for predictStartDay in predictStartDays:
     
         predictMove = False
         
-        for predictDays in range(7, 30): 
+        for predictDay in predictDays: 
         
             if predictMove:
                 # already decide to move, no need to predict more days
                 break
     
-            train = X[0:predictStartDays]
+            train = X[0:predictStartDay]
             history = [x[0] for x in train]
             
             # step1
             # predict rw count for future days
     
-            days = numpy.zeros(shape=(predictStartDays + predictDays, 1))
+            days = numpy.zeros(shape=(predictStartDay + predictDay, 1))
             for t in range(0, len(days)):
                 days[t] = [t + 1]
             
             # Split the data into training/testing sets
-            X_train = days[:-predictDays]
-            X_test = days[-predictDays:]
+            X_train = days[:-predictDay]
+            X_test = days[-predictDay:]
             
             # Split the targets into training/testing sets
             y_train = history
@@ -111,7 +111,7 @@ def predict(X, progress=True, stopIfFound=False):
                 pp = p1 + p2
                 diff = price1Obs - pp
                 
-                print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
+                print("predict move at day " + str(predictStartDay) + " (forecast " + str(predictDay) + " days), real saving if move at that day: " + format(diff))
                 
                 if stopIfFound:
                     return

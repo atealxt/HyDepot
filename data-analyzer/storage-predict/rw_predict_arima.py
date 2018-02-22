@@ -20,7 +20,7 @@ from price import *
 
 warnings.filterwarnings("ignore")
 
-def predict(X, progress=True, stopIfFound=False):
+def predict(X, progress=True, stopIfFound=False, predictStartDays=range(8, 30), predictDays=range(7, 30)):
 
     # real saving in God model:
     obs = [x[0] for x in X]
@@ -75,13 +75,13 @@ def predict(X, progress=True, stopIfFound=False):
                         continue
         return best_cfg
     
-    for predictStartDays in range(8, 30):
+    for predictStartDay in predictStartDays:
 
         if progress:
-            print("predict from day " + str(predictStartDays))
+            print("predict from day " + str(predictStartDay))
 
     
-        train = X[0:predictStartDays]
+        train = X[0:predictStartDay]
         history = [x for x in train]
         
         p_values = range(0, 5)
@@ -91,9 +91,9 @@ def predict(X, progress=True, stopIfFound=False):
     
         predictMove = False
         
-        for predictDays in range(7, 30): 
+        for predictDay in predictDays: 
         
-#             print("predict " + str(predictDays) + " days from day " + str(predictStartDays))
+#             print("predict " + str(predictDay) + " days from day " + str(predictStartDay))
     
             if predictMove:
                 # already decide to move, no need to predict more days
@@ -102,14 +102,14 @@ def predict(X, progress=True, stopIfFound=False):
             # step1
             # predict rw count for future days
     
-            train = X[0:predictStartDays]
+            train = X[0:predictStartDay]
             history = [x for x in train]
             bias = None
             predictions = list()
     
             predErr = False
     
-            for t in range(predictDays):    
+            for t in range(predictDay):    
                 try:
                     model = ARIMA(history, order=best_cfg)
                     model_fit = model.fit(trend='nc', disp=0)
@@ -162,8 +162,8 @@ def predict(X, progress=True, stopIfFound=False):
                 pp = p1 + p2
                 diff = price1Obs - pp
                 
-                print("predict move at day " + str(predictStartDays) + " (forecast " + str(predictDays) + " days), real saving if move at that day: " + format(diff))
-    #             print("predict " + str(predictDays) + " days from day " + str(predictStartDays))
+                print("predict move at day " + str(predictStartDay) + " (forecast " + str(predictDay) + " days), real saving if move at that day: " + format(diff))
+    #             print("predict " + str(predictDay) + " days from day " + str(predictStartDay))
     #             print("move at day: " + str(len(history)) + ", saving " + format(bestSaving))
                 if stopIfFound:
                     return
