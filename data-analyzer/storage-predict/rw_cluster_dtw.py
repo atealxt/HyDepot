@@ -6,13 +6,14 @@ import rw_predict_linreg
 import rw_predict_arima
 
 class ts_cluster(object):
-    def __init__(self,num_clust):
+    def __init__(self,colors):
         '''
         num_clust is the number of clusters for the k-means algorithm
         assignments holds the assignments of data points (indices) to clusters
         centroids holds the centroids of the clusters
         '''
-        self.num_clust=num_clust
+        self.colors = colors
+        self.num_clust=len(colors)
         self.assignments={}
         self.centroids=[]
         
@@ -21,12 +22,12 @@ class ts_cluster(object):
         k-means clustering algorithm for time series data.  dynamic time warping Euclidean distance
          used as default similarity measure. 
         '''
-#         self.centroids=random.sample(list(data),self.num_clust)
-        centroids = []
-        centroids.extend([data[0], data[1], data[99]])
-        self.centroids = centroids
-        data[0], data[4] = data[4], data[0]
-        data[1], data[2] = data[2], data[1]
+        self.centroids=random.sample(list(data),self.num_clust)
+#         centroids = []
+#         centroids.extend([data[0], data[1], data[99]])
+#         self.centroids = centroids
+#         data[0], data[4] = data[4], data[0]
+#         data[1], data[2] = data[2], data[1]
         
         for n in range(num_iter):
             if progress:
@@ -61,9 +62,13 @@ class ts_cluster(object):
     def get_assignments(self):
         return self.assignments
         
-    def plot_centroids(self):
-        for i in self.centroids:
-            plt.plot(i)
+    def plot_centroids(self, round=False):
+        _centroids = self.centroids
+        if round:
+            _centroids = np.around(self.centroids)
+        for idx, item in enumerate(_centroids):
+            line = plt.plot(item, label='Central ' + str(idx), color=self.colors[idx])
+        plt.legend()
         plt.show()
         
     def DTWDistance(self,s1,s2,w=None):
@@ -148,19 +153,20 @@ if __name__ == "__main__":
 
     print("clustering")
 
-    cluster = ts_cluster(3)
+    clusters = ['red', 'blue', 'green', 'cyan', 'orange', 'purple', 'black']
+    cluster = ts_cluster(clusters[0:3])
     cluster.k_means_clust(rwData, 10, 4, True)
-#     cluster.plot_centroids()
+    cluster.plot_centroids()
 
-    roundedCentroids = np.around(cluster.centroids)
+#     roundedCentroids = np.around(cluster.centroids)
     # test predict methods for the 3 cluster
-    for x in roundedCentroids:
-        print(x)
-        x = x.reshape(-1,1)
-        print("try linear regression...")
-        rw_predict_linreg.predict(x, stopIfFound=True)
-        print("try arima...")
-        rw_predict_arima.predict(x, stopIfFound=True)
+#     for x in roundedCentroids:
+#         print(x)
+#         x = x.reshape(-1,1)
+#         print("try linear regression...")
+#         rw_predict_linreg.predict(x, stopIfFound=True)
+#         print("try arima...")
+#         rw_predict_arima.predict(x, stopIfFound=True)
 
 
 
