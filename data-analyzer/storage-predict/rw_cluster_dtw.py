@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     print("clustering")
 
-    clusters = ['red', 'blue', 'green', 'cyan', 'orange', 'purple', 'black']
+    clusters = ['red', 'blue', 'green', 'orange', 'cyan', 'purple', 'black']
     cluster = ts_cluster(clusters[0:3])
     cluster.k_means_clust(rwData, 10, 4, True)
     cluster.plot_centroids()
