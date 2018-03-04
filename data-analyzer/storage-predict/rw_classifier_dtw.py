@@ -3,6 +3,7 @@ import pymysql
 from sklearn.metrics import classification_report
 import matplotlib.pylab as plt
 import numpy as np
+import re
 
 class ts_classifier(object):
     
@@ -133,6 +134,7 @@ if __name__ == "__main__":
     username = "root"
     password = "root"
 
+    dataSize = 150
     rw = []
     cursor = None
     cnx = None
@@ -140,7 +142,7 @@ if __name__ == "__main__":
         cnx = pymysql.connect(user=username, password=password, host=host, database=dbname)
         cursor = cnx.cursor()
         cursor.execute('SELECT rw_detail, type FROM logrw')
-        rows = cursor.fetchmany(150)
+        rows = cursor.fetchmany(dataSize)
         for row in rows:
             var = [int(x) for x in row[0].split(',')]
             var.append(row[1])
@@ -155,9 +157,51 @@ if __name__ == "__main__":
 
     print("classifying")
     
-    classifier = ts_classifier(False)
-    train, test = sampleByType(rwData, 0.8, 30)
-    classifier.predict(train, test, 4, False)
+    fig = plt.figure()
+    fig.suptitle("Classification F1 Score Trends")
+    trainRates = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    for idxRate, trainRate in enumerate(trainRates):
+        
+        type1, type2, type3, type4 = [], [], [] ,[]
+        sum_f1_score = []
+        
+        for dataRange in range(5, 31):
     
-    report = classifier.performance(test[:,-1])
-    print(report)
+            classifier = ts_classifier(False)
+            train, test = sampleByType(rwData, trainRate, dataRange)
+            classifier.predict(train, test, 4, False)
+            
+            report = classifier.performance(test[:,-1])
+            print(report)
+            
+            lines = report.split('\n')
+            
+            f1_score1 = re.sub('\s+', ' ', lines[2]).split(' ')[4]
+            f1_score2 = re.sub('\s+', ' ', lines[3]).split(' ')[4]
+            f1_score3 = re.sub('\s+', ' ', lines[4]).split(' ')[4]
+            f1_score4 = re.sub('\s+', ' ', lines[5]).split(' ')[4]
+            
+            type1.append(f1_score1)
+            type2.append(f1_score2)
+            type3.append(f1_score3)
+            type4.append(f1_score4)
+            sum_f1_score.append(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4))
+        
+        plt.subplot(4, 2, idxRate + 1)
+        plt.plot(range(5, 31), type1, label='Type 1', color='blue')
+        plt.plot(range(5, 31), type2, label='Type 2', color='red')
+        plt.plot(range(5, 31), type3, label='Type 3', color='green')
+        plt.plot(range(5, 31), type4, label='Type 4', color='orange')
+        plt.plot(range(5, 31), sum_f1_score, label='Sum', color='black')
+        plt.title("Train Rate " + str(int(trainRate * 100)) + "%", fontsize=10)
+        if idxRate > 5:
+            plt.xlabel('Train Days', fontsize=10)
+        if idxRate % 2 == 0:
+            plt.ylabel('F1 Score', fontsize=10)
+
+    plt.legend()
+#     fig.text(0.5, 0.04, 'Train Days', ha='center')
+#     fig.text(0.04, 0.5, 'F1 Score', va='center', rotation='vertical')
+    fig.tight_layout()
+    plt.show()
+        

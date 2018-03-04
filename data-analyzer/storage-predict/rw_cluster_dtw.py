@@ -67,8 +67,11 @@ class ts_cluster(object):
         if round:
             _centroids = np.around(self.centroids)
         for idx, item in enumerate(_centroids):
-            line = plt.plot(item, label='Central ' + str(idx), color=self.colors[idx])
+            line = plt.plot(item, label='Type ' + str(idx + 1), color=self.colors[idx])
         plt.legend()
+        plt.title("Access Trends")
+        plt.xlabel('Days')
+        plt.ylabel('R/W Counts')
         plt.show()
         
     def DTWDistance(self,s1,s2,w=None):
@@ -153,7 +156,7 @@ if __name__ == "__main__":
 
     print("clustering")
 
-    clusters = ['red', 'blue', 'green', 'orange', 'cyan', 'purple', 'black']
+    clusters = ['blue', 'red', 'green', 'orange', 'cyan', 'purple', 'black']
     cluster = ts_cluster(clusters[0:3])
     cluster.k_means_clust(rwData, 10, 4, True)
     cluster.plot_centroids()
