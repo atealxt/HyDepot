@@ -138,7 +138,7 @@ if __name__ == "__main__":
     try:
         cnx = pymysql.connect(user=username, password=password, host=host, database=dbname)
         cursor = cnx.cursor()
-        cursor.execute('SELECT rw_detail FROM logrw')
+        cursor.execute('SELECT rw_detail FROM logrw where type <> 4')
         rows = cursor.fetchmany(100)
         for row in rows:
             var = [int(x) for x in row[0].split(',')]
