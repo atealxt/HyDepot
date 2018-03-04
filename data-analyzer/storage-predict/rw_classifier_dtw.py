@@ -200,8 +200,6 @@ if __name__ == "__main__":
             plt.ylabel('F1 Score', fontsize=10)
 
     plt.legend()
-#     fig.text(0.5, 0.04, 'Train Days', ha='center')
-#     fig.text(0.04, 0.5, 'F1 Score', va='center', rotation='vertical')
     fig.tight_layout()
     plt.show()
         
