@@ -107,7 +107,7 @@ class ts_classifier(object):
         return np.sqrt(LB_sum)
 
 # select t.`type`, count(*) from logrw t where t.`type` is not null group by t.`type`    
-def sampleByType(rwData, trainRate = 0.8, dataRange = 30):
+def sampleByType(rwData, trainRate = 0.8, dayRange = 30):
 
     map = {}
     for d in rwData:
@@ -118,11 +118,11 @@ def sampleByType(rwData, trainRate = 0.8, dataRange = 30):
     for key, value in map.items():
         train_size = int(len(value) * trainRate)
         for v in value[0:train_size]:
-            train.append(np.append(v[0:dataRange], v[-1:]))
+            train.append(np.append(v[0:dayRange], v[-1:]))
         for v in value[train_size:]:
-            test.append(np.append(v[0:dataRange], v[-1:]))
+            test.append(np.append(v[0:dayRange], v[-1:]))
     train,test = np.array(train), np.array(test)
-    print("train rate: " + str(trainRate) + ", data range: " + str(dataRange) + ", train size: " + str(len(train)) + ", test size: " + str(len(test)))
+    print("train rate: " + str(trainRate) + ", day range: " + str(dayRange) + ", train size: " + str(len(train)) + ", test size: " + str(len(test)))
     return train, test
 
 if __name__ == "__main__":
@@ -165,10 +165,10 @@ if __name__ == "__main__":
         type1, type2, type3, type4 = [], [], [] ,[]
         sum_f1_score = []
         
-        for dataRange in range(5, 31):
+        for dayRange in range(5, 31):
     
             classifier = ts_classifier(False)
-            train, test = sampleByType(rwData, trainRate, dataRange)
+            train, test = sampleByType(rwData, trainRate, dayRange)
             classifier.predict(train, test, 4, False)
             
             report = classifier.performance(test[:,-1])
