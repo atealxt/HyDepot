@@ -2,8 +2,6 @@ import matplotlib.pylab as plt
 import numpy as np
 import random
 import pymysql
-import rw_predict_linreg
-import rw_predict_arima
 
 class ts_cluster(object):
     def __init__(self,colors):
@@ -160,17 +158,3 @@ if __name__ == "__main__":
     cluster = ts_cluster(clusters[0:3])
     cluster.k_means_clust(rwData, 10, 4, True)
     cluster.plot_centroids()
-
-#     roundedCentroids = np.around(cluster.centroids)
-    # test predict methods for the 3 cluster
-#     for x in roundedCentroids:
-#         print(x)
-#         x = x.reshape(-1,1)
-#         print("try linear regression...")
-#         rw_predict_linreg.predict(x, stopIfFound=True)
-#         print("try arima...")
-#         rw_predict_arima.predict(x, stopIfFound=True)
-
-
-
-

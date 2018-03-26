@@ -5,8 +5,8 @@ import matplotlib.pylab as plt
 import numpy as np
 import re
 from rw_classifier_dtw import *
-import rw_predict_linreg
-import rw_predict_arima
+from rw_predict_linreg import *
+from rw_predict_arima import *
 
 def sampleByRowId(rwData, rowIds, dayRange):
 
@@ -61,10 +61,18 @@ if __name__ == "__main__":
     for rId in rowIds:
         x = rwData[rId - 1]
         x= x[0:(len(x)-1)]
-        print(x)
+#         print(x)
         x = x.reshape(-1,1)
         print("try linear regression...")
-        rw_predict_linreg.predict(x, stopIfFound=True)
+        obj_linreg = predict_linreg()
+        obj_linreg.predict(x, stopIfFound=True)
         print("try arima...")
-        rw_predict_arima.predict(x, stopIfFound=True)
+        obj_arima = predict_arima()
+        obj_arima.predict(x, stopIfFound=True)
 
+        if obj_arima.predictSaving > obj_linreg.predictSaving:
+            print("arima beats linear regression")
+        elif obj_arima.predictSaving < obj_linreg.predictSaving:
+            print("linear regression beats arima")
+        else:
+            print("duce")

@@ -1,4 +1,7 @@
 # check workspace environments
+# python
+import sys
+print(sys.version)
 # scipy
 import scipy
 print('scipy: %s' % scipy.__version__)
@@ -23,3 +26,6 @@ print('theano: %s' % theano.__version__)
 # keras
 import keras
 print('keras: %s' % keras.__version__)
+# xgboost
+import xgboost
+print('xgboost: %s' % xgboost.__version__)

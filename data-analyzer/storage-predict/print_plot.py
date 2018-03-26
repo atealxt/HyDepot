@@ -2,8 +2,6 @@ import matplotlib.pylab as plt
 import numpy as np
 import random
 import pymysql
-import rw_predict_linreg
-import rw_predict_arima
 
 if __name__ == "__main__":
 
@@ -35,6 +33,6 @@ if __name__ == "__main__":
     rwData = np.array(rw)
 
     for idx, item in enumerate(rwData):
-        line = plt.plot(item, label='Central ' + str(idx), color='red')
+        line = plt.plot(item, label='Data ' + str(idx), color='red')
         plt.legend()
         plt.show()
