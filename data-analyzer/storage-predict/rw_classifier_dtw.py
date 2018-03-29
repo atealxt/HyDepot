@@ -125,6 +125,9 @@ def sampleByType(rwData, trainRate = 0.8, dayRange = 30):
     print("train rate: " + str(trainRate) + ", day range: " + str(dayRange) + ", train size: " + str(len(train)) + ", test size: " + str(len(test)))
     return train, test
 
+def score(f1_score, support):
+    return f1_score #+ support * 0.1
+
 if __name__ == "__main__":
     
     print("get data from db")
@@ -160,6 +163,15 @@ if __name__ == "__main__":
     fig = plt.figure()
     fig.suptitle("Classification F1 Score Trends")
     trainRates = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    
+    max_f1_score1 = -1
+    max_f1_score2 = -1
+    max_f1_score3 = -1
+    max_f1_score4 = -1
+    max_f1_score123 = -1
+    max_f1_score24 = -1
+    max_f1_score1234 = -1
+    
     for idxRate, trainRate in enumerate(trainRates):
         
         type1, type2, type3, type4 = [], [], [] ,[]
@@ -180,6 +192,38 @@ if __name__ == "__main__":
             f1_score2 = re.sub('\s+', ' ', lines[3]).split(' ')[4]
             f1_score3 = re.sub('\s+', ' ', lines[4]).split(' ')[4]
             f1_score4 = re.sub('\s+', ' ', lines[5]).split(' ')[4]
+            support1 = re.sub('\s+', ' ', lines[2]).split(' ')[5]
+            support2 = re.sub('\s+', ' ', lines[3]).split(' ')[5]
+            support3 = re.sub('\s+', ' ', lines[4]).split(' ')[5]
+            support4 = re.sub('\s+', ' ', lines[5]).split(' ')[5]
+            
+            # TODO more support records is better!
+            
+            if score(float(f1_score1), int(support1)) > max_f1_score1:
+                max_f1_score1 = score(float(f1_score1), int(support1)) 
+#                 print("new f1_score1 record")
+            if score(float(f1_score2), int(support2)) > max_f1_score2:
+                max_f1_score2 = score(float(f1_score2), int(support2)) 
+                print("new f1_score2 record")
+            if score(float(f1_score3), int(support3)) > max_f1_score3:
+                max_f1_score3 = score(float(f1_score3), int(support3)) 
+#                 print("new f1_score3 record")
+            if score(float(f1_score4), int(support4)) > max_f1_score4:
+                max_f1_score4 = score(float(f1_score4), int(support4)) 
+                print("new f1_score4 record")
+            if score(float(f1_score1) + float(f1_score2) + float(f1_score3), \
+                     int(support1) + int(support2) + int(support3)) > max_f1_score123:
+                max_f1_score123 = score(float(f1_score1) + float(f1_score2) + float(f1_score3), \
+                                        int(support1) + int(support2) + int(support3))
+                print("new f1_score123 record")
+            if score(float(f1_score2) + float(f1_score4), int(support2) + int(support4)) > max_f1_score24:
+                max_f1_score24 = score(float(f1_score2) + float(f1_score4), int(support2) + int(support4))
+                print("new f1_score24 record")
+            if score(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4),\
+                     int(support1) + int(support2) + int(support3) + int(support4)) > max_f1_score1234:
+                max_f1_score1234 = score(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4),\
+                                         int(support1) + int(support2) + int(support3) + int(support4))
+                print("new f1_score1234 record")
             
             type1.append(f1_score1)
             type2.append(f1_score2)
