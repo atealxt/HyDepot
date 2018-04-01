@@ -30,7 +30,8 @@ class predict_linreg(object):
         self.bestDay=None
         self.bestSaving=None
         self.predictDay=None
-        self.predictSaving=-1
+        self.predictSaving=0
+        self.price1Obs=0
 
     def get_bestDay(self):
         return self.bestDay
@@ -40,12 +41,15 @@ class predict_linreg(object):
         return self.predictDay
     def get_predictSaving(self):
         return self.predictSaving
+    def get_price1Obs(self):
+        return self.price1Obs
 
     def predict(self, X, progress=True, stopIfFound=False, predictStartDays=range(8, 30), predictDays=range(7, 30)):
     
         # real saving in God model:
         obs = [x[0] for x in X]
         price1Obs = price1(obs)
+        self.price1Obs = price1Obs
         bestDayObs = None
         bestSavingObs = 0
         for t in range(0, len(obs) - 1):

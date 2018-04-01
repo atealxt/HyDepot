@@ -26,7 +26,8 @@ class predict_arima(object):
         self.bestDay=None
         self.bestSaving=None
         self.predictDay=None
-        self.predictSaving=-1
+        self.predictSaving=0
+        self.price1Obs=0
 
     def get_bestDay(self):
         return self.bestDay
@@ -36,12 +37,15 @@ class predict_arima(object):
         return self.predictDay
     def get_predictSaving(self):
         return self.predictSaving
+    def get_price1Obs(self):
+        return self.price1Obs
 
     def predict(self, X, progress=True, stopIfFound=False, predictStartDays=range(8, 30), predictDays=range(7, 30)):
     
         # real saving in God model:
         obs = [x[0] for x in X]
         price1Obs = price1(obs)
+        self.price1Obs = price1Obs
         bestDayObs = None
         bestSavingObs = 0
         for t in range(0, len(obs) - 1):
@@ -61,7 +65,7 @@ class predict_arima(object):
         # evaluate an ARIMA model for a given order (p,d,q) and return RMSE
         def evaluate_arima_model(X, arima_order):
             # prepare training dataset
-            _train_size = int(len(X) * 0.75)
+            _train_size = int(len(X) * 0.8)
             _train, _test = X[0:_train_size], X[_train_size:]
             _history = [x for x in _train]
             # make predictions
