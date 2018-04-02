@@ -65,7 +65,7 @@ class predict_arima(object):
         # evaluate an ARIMA model for a given order (p,d,q) and return RMSE
         def evaluate_arima_model(X, arima_order):
             # prepare training dataset
-            _train_size = int(len(X) * 0.8)
+            _train_size = int(len(X) * 0.75)
             _train, _test = X[0:_train_size], X[_train_size:]
             _history = [x for x in _train]
             # make predictions

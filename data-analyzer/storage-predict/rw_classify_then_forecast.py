@@ -62,7 +62,10 @@ def calc(q_in, calc_result):
         else:
             saving_optimized = obj_linreg.predictSaving
 
-        calc_result.append([price, saving_linreg, saving_arima, saving_optimized])
+        if obj_arima.predictSaving > obj_linreg.predictSaving:
+            calc_result.append([price, saving_linreg, saving_arima, saving_optimized, item])
+#         calc_result.append([price, saving_linreg, saving_arima, saving_optimized])
+
         q_in.task_done()
 
 if __name__ == "__main__":
@@ -98,7 +101,7 @@ if __name__ == "__main__":
     print("classifying")
     
     classifier = ts_classifier(False)
-    trainRate = 0.95
+    trainRate = 0.6
     dayRange = 6
     train, test, test_original = sampleByType(rwData, trainRate, dayRange)
     classifier.predict(train, test, 4, False)
@@ -134,6 +137,7 @@ if __name__ == "__main__":
         predictSaving_linreg += result[1]
         predictSaving_arima += result[2]
         predictSaving_optimized += result[3]
+        print("Item " + str(result[4]))
 
     print("Original Price: %.6f" % originalPrice)
     print("Predict Saving with ARIMA: %.6f" % predictSaving_arima)
