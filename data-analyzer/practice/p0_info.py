@@ -29,3 +29,6 @@ print('keras: %s' % keras.__version__)
 # xgboost
 import xgboost
 print('xgboost: %s' % xgboost.__version__)
+# pymysql
+import pymysql
+print('pymysql: %s' % pymysql.__version__)
