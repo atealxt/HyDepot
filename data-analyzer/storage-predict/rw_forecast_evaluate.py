@@ -35,8 +35,17 @@ def calc(q_in, calc_result):
         
         price = obj_arima.price1Obs # same as linreg's
 
-        if obj_arima.predictSaving > obj_linreg.predictSaving:
-            calc_result.append([price, saving_linreg, saving_arima, item])
+        pred = x[x.size - 1]
+        if pred == 4:
+            saving_optimized = 0
+        elif pred == 2:
+            saving_optimized = obj_arima.predictSaving
+        else:
+            saving_optimized = obj_linreg.predictSaving
+
+#         if obj_arima.predictSaving > obj_linreg.predictSaving:
+#             calc_result.append([price, saving_linreg, saving_arima, saving_optimized, item])
+        calc_result.append([price, saving_linreg, saving_arima, saving_optimized, item])
 
         q_in.task_done()
 
@@ -49,7 +58,7 @@ if __name__ == "__main__":
     username = "root"
     password = "root"
 
-    dataSize = 50
+    dataSize = 2
     rw = []
     cursor = None
     cnx = None
@@ -86,12 +95,15 @@ if __name__ == "__main__":
     originalPrice = 0
     predictSaving_linreg = 0
     predictSaving_arima = 0
+    predictSaving_optimized = 0
     for result in calc_result:
         originalPrice += result[0]
         predictSaving_linreg += result[1]
         predictSaving_arima += result[2]
-        print("Item " + str(result[3]))
+        predictSaving_optimized += result[3]
+        print("Item " + str(result[4]))
 
     print("Original Price: %.6f" % originalPrice)
     print("Predict Saving with ARIMA: %.6f" % predictSaving_arima)
     print("Predict Saving with Linear Regression: %.6f" % predictSaving_linreg)
+    print("Optimized Predict Saving: %.6f" % predictSaving_optimized)
