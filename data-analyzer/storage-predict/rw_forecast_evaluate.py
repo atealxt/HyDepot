@@ -27,15 +27,13 @@ def calc(q_in, calc_result):
         x, idx, len = item[0], item[1], item[2]
         print("data" + str(idx + 1) + "/" + str(len) + ": " + str(x))
         x = x.reshape(-1,1)
+        pred = x[x.size - 1]
+        x = x[0:x.size - 1]
 
         obj_linreg = execute_predict_linreg(x)
         saving_linreg = obj_linreg.predictSaving
         obj_arima = execute_predict_arima(x)
         saving_arima = obj_arima.predictSaving
-        
-        price = obj_arima.price1Obs # same as linreg's
-
-        pred = x[x.size - 1]
         if pred == 4:
             saving_optimized = 0
         elif pred == 2:
@@ -43,6 +41,7 @@ def calc(q_in, calc_result):
         else:
             saving_optimized = obj_linreg.predictSaving
 
+        price = obj_arima.price1Obs # same as linreg's
 #         if obj_arima.predictSaving > obj_linreg.predictSaving:
 #             calc_result.append([price, saving_linreg, saving_arima, saving_optimized, item])
         calc_result.append([price, saving_linreg, saving_arima, saving_optimized, item])
