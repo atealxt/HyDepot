@@ -44,7 +44,7 @@ def price1(X):
 
 def price2(X):
     existDaysInClass2 = len(X);
-    storagePrice2 = STORAGE_PRICE_UNIT_CLASS2 * max(sizeInMB / 1024, MIN_UNIT_SIZE_IN_KB_CLASS2 / 1024.0 / 1024.0
+    storagePrice2 = STORAGE_PRICE_UNIT_CLASS2 * max(sizeInMB / 1024.0, MIN_UNIT_SIZE_IN_KB_CLASS2 / 1024.0 / 1024.0
                                                     ) * (max(existDaysInClass2, 30) / 30.0)
     rwCount = 0
     for t in range(0, len(X)):
