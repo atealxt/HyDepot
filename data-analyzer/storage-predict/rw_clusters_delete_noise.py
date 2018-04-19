@@ -33,13 +33,13 @@ if __name__ == "__main__":
         cnx = pymysql.connect(user=username, password=password, host=host, database=dbname)
         cursor = cnx.cursor()
         for km in range(3, 11):
-#             print("km" + str(km))
+            print("km" + str(km))
             sql = sql_cluster_score.replace("km3", "km" + str(km))
             cursor.execute(sql)
             rows = cursor.fetchall()
             kms = {}
             for row in rows:
-#                 print(row)
+                print(row)
                 kms[row[0]] = [row[1], row[2], row[3], row[4], row[5]]
             dict_km_score["km" + str(km)] = kms
     finally:

@@ -126,7 +126,7 @@ def sampleByType(rwData, trainRate = 0.8, dayRange = 30):
     return train, test
 
 def score(f1_score, support):
-    return f1_score #+ support * 0.1
+    return f1_score # + support * 0.1
 
 if __name__ == "__main__":
     
@@ -137,15 +137,16 @@ if __name__ == "__main__":
     username = "root"
     password = "root"
 
-    dataSize = 150
+#     dataSize = 150
     rw = []
     cursor = None
     cnx = None
     try:
         cnx = pymysql.connect(user=username, password=password, host=host, database=dbname)
         cursor = cnx.cursor()
-        cursor.execute('SELECT rw_detail, type FROM logrw')
-        rows = cursor.fetchmany(dataSize)
+#         cursor.execute('SELECT rw_detail, type2 FROM logrw t where t.type is not null and t.id not in (5,15,48,75,129)')#
+        cursor.execute('SELECT rw_detail, type FROM logrw t where t.type is not null and t.type <>4')# and t.id not in (5,15,48,75,129)  
+        rows = cursor.fetchall()
         for row in rows:
             var = [int(x) for x in row[0].split(',')]
             var.append(row[1])
@@ -191,51 +192,51 @@ if __name__ == "__main__":
             f1_score1 = re.sub('\s+', ' ', lines[2]).split(' ')[4]
             f1_score2 = re.sub('\s+', ' ', lines[3]).split(' ')[4]
             f1_score3 = re.sub('\s+', ' ', lines[4]).split(' ')[4]
-            f1_score4 = re.sub('\s+', ' ', lines[5]).split(' ')[4]
+#             f1_score4 = re.sub('\s+', ' ', lines[5]).split(' ')[4]
             support1 = re.sub('\s+', ' ', lines[2]).split(' ')[5]
             support2 = re.sub('\s+', ' ', lines[3]).split(' ')[5]
             support3 = re.sub('\s+', ' ', lines[4]).split(' ')[5]
-            support4 = re.sub('\s+', ' ', lines[5]).split(' ')[5]
+#             support4 = re.sub('\s+', ' ', lines[5]).split(' ')[5]
             
             # TODO more support records is better!
             
             if score(float(f1_score1), int(support1)) > max_f1_score1:
                 max_f1_score1 = score(float(f1_score1), int(support1)) 
-#                 print("new f1_score1 record")
+                print("new f1_score1 record")
             if score(float(f1_score2), int(support2)) > max_f1_score2:
                 max_f1_score2 = score(float(f1_score2), int(support2)) 
                 print("new f1_score2 record")
             if score(float(f1_score3), int(support3)) > max_f1_score3:
                 max_f1_score3 = score(float(f1_score3), int(support3)) 
-#                 print("new f1_score3 record")
-            if score(float(f1_score4), int(support4)) > max_f1_score4:
-                max_f1_score4 = score(float(f1_score4), int(support4)) 
-                print("new f1_score4 record")
+                print("new f1_score3 record")
+#             if score(float(f1_score4), int(support4)) > max_f1_score4:
+#                 max_f1_score4 = score(float(f1_score4), int(support4)) 
+#                 print("new f1_score4 record")
             if score(float(f1_score1) + float(f1_score2) + float(f1_score3), \
                      int(support1) + int(support2) + int(support3)) > max_f1_score123:
                 max_f1_score123 = score(float(f1_score1) + float(f1_score2) + float(f1_score3), \
                                         int(support1) + int(support2) + int(support3))
                 print("new f1_score123 record")
-            if score(float(f1_score2) + float(f1_score4), int(support2) + int(support4)) > max_f1_score24:
-                max_f1_score24 = score(float(f1_score2) + float(f1_score4), int(support2) + int(support4))
-                print("new f1_score24 record")
-            if score(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4),\
-                     int(support1) + int(support2) + int(support3) + int(support4)) > max_f1_score1234:
-                max_f1_score1234 = score(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4),\
-                                         int(support1) + int(support2) + int(support3) + int(support4))
-                print("new f1_score1234 record")
+#             if score(float(f1_score2) + float(f1_score4), int(support2) + int(support4)) > max_f1_score24:
+#                 max_f1_score24 = score(float(f1_score2) + float(f1_score4), int(support2) + int(support4))
+#                 print("new f1_score24 record")
+#             if score(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4),\
+#                      int(support1) + int(support2) + int(support3) + int(support4)) > max_f1_score1234:
+#                 max_f1_score1234 = score(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4),\
+#                                          int(support1) + int(support2) + int(support3) + int(support4))
+#                 print("new f1_score1234 record")
             
             type1.append(f1_score1)
             type2.append(f1_score2)
             type3.append(f1_score3)
-            type4.append(f1_score4)
-            sum_f1_score.append(float(f1_score1) + float(f1_score2) + float(f1_score3) + float(f1_score4))
+#             type4.append(f1_score4)
+            sum_f1_score.append(float(f1_score1) + float(f1_score2) + float(f1_score3))
         
         plt.subplot(4, 2, idxRate + 1)
         plt.plot(range(5, 31), type1, label='Type 1', color='blue')
         plt.plot(range(5, 31), type2, label='Type 2', color='red')
         plt.plot(range(5, 31), type3, label='Type 3', color='green')
-        plt.plot(range(5, 31), type4, label='Type 4', color='orange')
+#         plt.plot(range(5, 31), type4, label='Type 4', color='orange')
         plt.plot(range(5, 31), sum_f1_score, label='Sum', color='black')
         plt.title("Train Rate " + str(int(trainRate * 100)) + "%", fontsize=10)
         if idxRate > 5:
